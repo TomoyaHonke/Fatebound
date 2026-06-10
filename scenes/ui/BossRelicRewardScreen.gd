@@ -1,0 +1,243 @@
+extends Control
+
+signal reward_chosen(relic_id: String)
+
+const ACT1_BOSS_RELIC_IDS := ["former_hunter_bow", "hunter_tracking_eye", "hunter_trapwire"]
+
+const C_GOLD := Color(0.90, 0.78, 0.25)
+const CARD_W := 640.0
+const CARD_H := 76.0
+const CARD_GAP := 10.0
+
+var _relic_ids: Array = []
+var _choice_locked: bool = false
+
+
+func _ready() -> void:
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	hide()
+
+
+func show_reward() -> void:
+	_choice_locked = false
+	_relic_ids = ACT1_BOSS_RELIC_IDS
+	_build()
+	show()
+	modulate.a = 0.0
+	var t = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	t.tween_property(self, "modulate:a", 1.0, 0.45)
+
+
+func _build() -> void:
+	for c in get_children():
+		c.queue_free()
+
+	var bg = TextureRect.new()
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bg.texture = load("res://assets/backgrounds/act1/act1_boss_relic_reward_former_hunter.png")
+	add_child(bg)
+
+	var overlay = ColorRect.new()
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.color = Color(0.010, 0.006, 0.014, 0.22)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(overlay)
+
+	var speech_panel = Panel.new()
+	speech_panel.position = Vector2(300, 372)
+	speech_panel.size = Vector2(680, 56)
+	var speech_style = StyleBoxFlat.new()
+	speech_style.bg_color = Color(0.02, 0.012, 0.030, 0.58)
+	speech_style.border_color = Color(0.80, 0.62, 0.28, 0.46)
+	speech_style.set_border_width_all(1)
+	speech_style.set_corner_radius_all(8)
+	speech_panel.add_theme_stylebox_override("panel", speech_style)
+	add_child(speech_panel)
+
+	var speech = Label.new()
+	speech.text = "倒れた敵の身体から、まだ消えない力が滲み出している。\n奪え。進むために。"
+	speech.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	speech.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	speech.position = Vector2(16, 0)
+	speech.size = Vector2(648, 56)
+	speech.add_theme_font_size_override("font_size", 16)
+	speech.add_theme_color_override("font_color", Color(0.96, 0.90, 1.0))
+	speech.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+	speech.add_theme_constant_override("shadow_offset_x", 2)
+	speech.add_theme_constant_override("shadow_offset_y", 2)
+	speech_panel.add_child(speech)
+
+	var start_x = (1280.0 - CARD_W) / 2.0
+	var row_y = 440.0
+	for i in _relic_ids.size():
+		var relic_id = _relic_ids[i]
+		var relic = GameState.get_relic_definition(relic_id)
+		if relic.is_empty():
+			continue
+		var card = _BossRelicCard.new()
+		card.relic_data = relic
+		card.position = Vector2(start_x, row_y + i * (CARD_H + CARD_GAP))
+		card.size = Vector2(CARD_W, CARD_H)
+		card.custom_minimum_size = Vector2(CARD_W, CARD_H)
+		card.relic_selected.connect(_on_relic_selected)
+		add_child(card)
+		card.modulate.a = 0.0
+		card.position.y += 18.0
+		var t = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+		t.tween_property(card, "modulate:a", 1.0, 0.30).set_delay(i * 0.08)
+		t.parallel().tween_property(card, "position:y", row_y + i * (CARD_H + CARD_GAP), 0.30).set_delay(i * 0.08)
+
+
+func _on_relic_selected(relic_id: String) -> void:
+	if _choice_locked or relic_id.is_empty():
+		return
+	_choice_locked = true
+	GameState.add_relic(relic_id)
+	var t = create_tween().set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
+	t.tween_property(self, "modulate:a", 0.0, 0.35)
+	t.tween_callback(func():
+		hide()
+		reward_chosen.emit(relic_id)
+	)
+
+
+class _BossRelicCard extends Control:
+	signal relic_selected(relic_id: String)
+
+	const W := 640.0
+	const H := 76.0
+	const PAD_X := 14.0
+	const LEFT_W := 158.0
+	const DIVIDER_X := 178.0
+	const TEXT_X := 194.0
+	const TEXT_W := 432.0
+	const NAME_Y := 14.0
+	const NAME_H := 22.0
+	const RARITY_Y := 42.0
+	const RARITY_H := 16.0
+	const EFFECT_Y := 10.0
+	const EFFECT_H := 26.0
+	const MEMORY_Y := 42.0
+	const MEMORY_H := 24.0
+
+	var relic_data: Dictionary = {}
+	var _hovered: bool = false
+
+	func _ready() -> void:
+		mouse_filter = Control.MOUSE_FILTER_STOP
+		focus_mode = Control.FOCUS_ALL
+		if not relic_data.is_empty():
+			_build_labels()
+
+	func _build_labels() -> void:
+		var rarity = relic_data.get("rarity", "common")
+
+		var name_lbl = Label.new()
+		name_lbl.text = relic_data.get("name_jp", "")
+		name_lbl.position = Vector2(PAD_X, NAME_Y)
+		name_lbl.size = Vector2(LEFT_W, NAME_H)
+		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		name_lbl.add_theme_font_size_override("font_size", 14)
+		name_lbl.add_theme_color_override("font_color", Color(0.96, 0.91, 1.0))
+		add_child(name_lbl)
+
+		var rar_lbl = Label.new()
+		rar_lbl.text = _rarity_text(rarity)
+		rar_lbl.position = Vector2(PAD_X, RARITY_Y)
+		rar_lbl.size = Vector2(LEFT_W, RARITY_H)
+		rar_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		rar_lbl.add_theme_font_size_override("font_size", 10)
+		rar_lbl.add_theme_color_override("font_color", _rarity_label_color(rarity))
+		add_child(rar_lbl)
+
+		var divider = ColorRect.new()
+		divider.position = Vector2(DIVIDER_X, 16)
+		divider.size = Vector2(1, H - 32)
+		divider.color = Color(_border_color(rarity), 0.34)
+		divider.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(divider)
+
+		_add_section_label("効果: " + _effect_text(), Vector2(TEXT_X, EFFECT_Y), Vector2(TEXT_W, EFFECT_H), 11, Color(0.86, 0.84, 0.96), 2)
+		_add_section_label("記憶: " + _memory_text(), Vector2(TEXT_X, MEMORY_Y), Vector2(TEXT_W, MEMORY_H), 10, Color(0.66, 0.62, 0.78), 2)
+
+	func _add_section_label(text: String, pos: Vector2, label_size: Vector2, font_size: int, color: Color, max_lines: int) -> void:
+		var lbl = Label.new()
+		lbl.text = text
+		lbl.position = pos
+		lbl.size = label_size
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		lbl.add_theme_font_size_override("font_size", font_size)
+		lbl.add_theme_color_override("font_color", color)
+		lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		lbl.clip_text = true
+		lbl.max_lines_visible = max_lines
+		lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		add_child(lbl)
+
+	func _effect_text() -> String:
+		return relic_data.get("effect_jp", _split_description_text()[0])
+
+	func _memory_text() -> String:
+		return relic_data.get("memory_jp", _split_description_text()[1])
+
+	func _split_description_text() -> Array[String]:
+		var lines = String(relic_data.get("description_jp", "")).split("\n", false, 1)
+		var effect = lines[0] if lines.size() > 0 else ""
+		var memory = lines[1] if lines.size() > 1 else ""
+		return [effect, memory]
+
+	func _gui_input(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			relic_selected.emit(relic_data.get("id", ""))
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_MOUSE_ENTER:
+			_hovered = true
+			queue_redraw()
+		elif what == NOTIFICATION_MOUSE_EXIT:
+			_hovered = false
+			queue_redraw()
+
+	func _draw() -> void:
+		var rarity = relic_data.get("rarity", "common")
+		match rarity:
+			"epic":
+				for i in range(3, 0, -1):
+					var pad = float(i) * 2.2
+					draw_rect(Rect2(-pad, -pad, W + pad * 2.0, H + pad * 2.0), Color(0.65, 0.22, 0.90, 0.04 * float(i)), true)
+				draw_rect(Rect2(0, 0, W, H), Color(0.048, 0.028, 0.082, 0.64), true)
+				draw_rect(Rect2(0, 0, W, H), Color(0.86, 0.48, 1.0, 0.95) if _hovered else Color(0.72, 0.32, 0.95, 0.72), false, 2.2)
+			"rare":
+				for i in range(3, 0, -1):
+					var pad = float(i) * 2.2
+					draw_rect(Rect2(-pad, -pad, W + pad * 2.0, H + pad * 2.0), Color(0.30, 0.55, 1.0, 0.04 * float(i)), true)
+				draw_rect(Rect2(0, 0, W, H), Color(0.032, 0.040, 0.075, 0.64), true)
+				draw_rect(Rect2(0, 0, W, H), Color(0.58, 0.82, 1.0, 0.95) if _hovered else Color(0.40, 0.65, 1.0, 0.72), false, 2.0)
+			_:
+				draw_rect(Rect2(0, 0, W, H), Color(0.042, 0.036, 0.068, 0.62), true)
+				draw_rect(Rect2(0, 0, W, H), Color(0.62, 0.58, 0.72, 0.86) if _hovered else Color(0.42, 0.38, 0.50, 0.64), false, 1.8)
+
+	func _border_color(rarity: String) -> Color:
+		match rarity:
+			"rare": return Color(0.40, 0.65, 1.0)
+			"epic": return Color(0.72, 0.32, 0.95)
+			_: return Color(0.42, 0.38, 0.50)
+
+	func _rarity_text(rarity: String) -> String:
+		match rarity:
+			"rare": return "◆ レア"
+			"epic": return "◆ エピック"
+			_: return "◇ コモン"
+
+	func _rarity_label_color(rarity: String) -> Color:
+		match rarity:
+			"rare": return Color(0.45, 0.70, 1.0, 0.80)
+			"epic": return Color(0.80, 0.45, 1.0, 0.90)
+			_: return Color(0.60, 0.56, 0.70, 0.65)

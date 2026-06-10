@@ -1,0 +1,17 @@
+# Godot
+.godot/
+.import/
+export.cfg
+export_presets.cfg
+
+# Mac
+.DS_Store
+
+# Logs
+*.log
+
+# Builds
+/builds/
+*.dmg
+*.zip
+*.app

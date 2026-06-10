@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://c4br7y2hj3a5k"]
+
+[ext_resource type="Script" path="res://scenes/ui/CardNode.gd" id="1_card"]
+
+[node name="CardNode" type="Control"]
+custom_minimum_size = Vector2(130, 190)
+script = ExtResource("1_card")

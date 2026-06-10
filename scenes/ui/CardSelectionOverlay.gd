@@ -1,0 +1,297 @@
+extends Control
+
+signal card_selected(deck_index: int)
+signal closed
+
+const CARD_SCENE = "res://scenes/ui/CardNode.tscn"
+const CARD_W := 130.0
+const CARD_H := 190.0
+const DECK_CARD_SCALE := 1.12
+const ENTRY_W := 284.0
+const ENTRY_H := 252.0
+const SCROLL_TOP_PADDING := 28.0
+
+const C_GOLD := Color(0.86, 0.72, 0.34)
+const C_TEXT := Color(0.88, 0.82, 1.00)
+
+var _scroll: ScrollContainer
+var _scroll_content: VBoxContainer
+var _grid: GridContainer
+var _empty_label: Label
+var _card_scene: PackedScene
+var _close_btn: Button
+var _title_label: Label
+var _remaining_label: Label
+var _mode: String = "upgrade"
+var _title_text: String = ""
+var _remaining_picks: int = 1
+var _allow_cancel: bool = true
+
+
+func _ready() -> void:
+	_card_scene = load(CARD_SCENE)
+	_build_ui()
+	hide()
+
+
+func show_selection(mode: String, title_text: String, remaining_picks: int = 1, allow_cancel: bool = true) -> void:
+	_mode = mode
+	_title_text = title_text
+	_remaining_picks = maxi(remaining_picks, 1)
+	_allow_cancel = allow_cancel
+	_populate()
+	_update_labels()
+	show()
+	call_deferred("_reset_scroll_top")
+	grab_focus()
+
+
+func refresh() -> void:
+	_populate()
+	_update_labels()
+	call_deferred("_reset_scroll_top")
+
+
+func set_remaining_picks(remaining_picks: int) -> void:
+	_remaining_picks = maxi(remaining_picks, 1)
+	_update_labels()
+
+
+func _input(event: InputEvent) -> void:
+	if not visible:
+		return
+	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE and _allow_cancel:
+		close()
+		get_viewport().set_input_as_handled()
+
+
+func close() -> void:
+	hide()
+	closed.emit()
+
+
+func _build_ui() -> void:
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	focus_mode = Control.FOCUS_ALL
+
+	var overlay = ColorRect.new()
+	overlay.name = "入力ブロック"
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.color = Color(0, 0, 0, 0.68)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(overlay)
+
+	var panel = Panel.new()
+	panel.name = "選択パネル"
+	panel.anchor_left = 0.12
+	panel.anchor_top = 0.10
+	panel.anchor_right = 0.88
+	panel.anchor_bottom = 0.88
+	var ps = StyleBoxFlat.new()
+	ps.bg_color = Color(0.026, 0.022, 0.052, 0.98)
+	ps.border_color = Color(C_GOLD, 0.56)
+	ps.set_border_width_all(2)
+	ps.set_corner_radius_all(8)
+	ps.shadow_color = Color(0, 0, 0, 0.45)
+	ps.shadow_size = 12
+	panel.add_theme_stylebox_override("panel", ps)
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(panel)
+
+	_title_label = Label.new()
+	_title_label.text = "カードを選択"
+	_title_label.position = Vector2(28, 20)
+	_title_label.size = Vector2(500, 42)
+	_title_label.add_theme_font_size_override("font_size", 30)
+	_title_label.add_theme_color_override("font_color", C_GOLD)
+	_title_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.82))
+	_title_label.add_theme_constant_override("shadow_offset_x", 2)
+	_title_label.add_theme_constant_override("shadow_offset_y", 2)
+	panel.add_child(_title_label)
+
+	_close_btn = _make_button("閉じる", Vector2(820, 40), Vector2(128, 42))
+	_close_btn.pressed.connect(close)
+	panel.add_child(_close_btn)
+
+	var line = ColorRect.new()
+	line.position = Vector2(26, 76)
+	line.size = Vector2(922, 1)
+	line.color = Color(C_GOLD, 0.35)
+	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(line)
+
+	_remaining_label = Label.new()
+	_remaining_label.position = Vector2(26, 82)
+	_remaining_label.size = Vector2(922, 24)
+	_remaining_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_remaining_label.add_theme_font_size_override("font_size", 14)
+	_remaining_label.add_theme_color_override("font_color", Color(0.72, 0.68, 0.86))
+	panel.add_child(_remaining_label)
+
+	var scroll = ScrollContainer.new()
+	_scroll = scroll
+	scroll.position = Vector2(26, 110)
+	scroll.size = Vector2(922, 434)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	panel.add_child(scroll)
+
+	_scroll_content = VBoxContainer.new()
+	_scroll_content.name = "DeckScrollContent"
+	_scroll_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_scroll_content.add_theme_constant_override("separation", 0)
+	scroll.add_child(_scroll_content)
+
+	var top_padding = Control.new()
+	top_padding.name = "TopPadding"
+	top_padding.custom_minimum_size = Vector2(0, SCROLL_TOP_PADDING)
+	_scroll_content.add_child(top_padding)
+
+	_grid = GridContainer.new()
+	_grid.name = "DeckGrid"
+	_grid.columns = 3
+	_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_grid.add_theme_constant_override("h_separation", 18)
+	_grid.add_theme_constant_override("v_separation", 18)
+	_scroll_content.add_child(_grid)
+
+	_empty_label = Label.new()
+	_empty_label.text = "対象カードがありません。"
+	_empty_label.position = Vector2(26, 104)
+	_empty_label.size = Vector2(922, 80)
+	_empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_empty_label.add_theme_font_size_override("font_size", 18)
+	_empty_label.add_theme_color_override("font_color", C_TEXT)
+	_empty_label.visible = false
+	panel.add_child(_empty_label)
+
+
+func _populate() -> void:
+	for child in _grid.get_children():
+		child.queue_free()
+
+	var entries := _build_entries()
+	_empty_label.visible = entries.is_empty()
+	for entry in entries:
+		_grid.add_child(_make_card_entry(entry))
+
+
+func _reset_scroll_top() -> void:
+	if _scroll:
+		_scroll.scroll_vertical = 0
+
+
+func _update_labels() -> void:
+	if _title_label:
+		_title_label.text = _title_text
+	if _remaining_label:
+		_remaining_label.text = "あと %d 枚" % _remaining_picks
+	if _close_btn:
+		_close_btn.visible = _allow_cancel
+
+
+func _build_entries() -> Array:
+	var result: Array = []
+	for i in GameState.deck.size():
+		var card_ref = GameState.deck[i]
+		var can_select = GameState.can_upgrade_card(card_ref) if _mode == "upgrade" else GameState.can_remove_card(card_ref)
+		if not can_select:
+			continue
+		var card = GameState.get_card(card_ref)
+		if card.is_empty():
+			continue
+		result.append({"card": card, "index": i})
+	return result
+
+
+func _make_card_entry(entry_data: Dictionary) -> Control:
+	var card: Dictionary = entry_data["card"]
+	var deck_index: int = entry_data["index"]
+
+	var entry = Control.new()
+	entry.custom_minimum_size = Vector2(ENTRY_W, ENTRY_H)
+	entry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	entry.mouse_filter = Control.MOUSE_FILTER_STOP
+	entry.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			card_selected.emit(deck_index)
+	)
+
+	var card_node = _card_scene.instantiate()
+	card_node.setup(card, 0, true, true)
+	card_node.scale = Vector2(DECK_CARD_SCALE, DECK_CARD_SCALE)
+	card_node.position = Vector2(
+		(ENTRY_W - CARD_W * DECK_CARD_SCALE) * 0.5,
+		6
+	)
+	entry.add_child(card_node)
+
+	var meta = _make_meta_label(card)
+	if not meta.is_empty():
+		var meta_label = Label.new()
+		meta_label.text = meta
+		meta_label.position = Vector2(18, 222)
+		meta_label.size = Vector2(ENTRY_W - 36, 24)
+		meta_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		meta_label.add_theme_font_size_override("font_size", 13)
+		meta_label.add_theme_color_override("font_color", Color(0.82, 0.76, 0.94))
+		meta_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.82))
+		meta_label.add_theme_constant_override("shadow_offset_x", 1)
+		meta_label.add_theme_constant_override("shadow_offset_y", 1)
+		entry.add_child(meta_label)
+
+	return entry
+
+
+func _make_meta_label(card: Dictionary) -> String:
+	var parts: Array = []
+	match card.get("rarity", ""):
+		"rare":
+			parts.append("レア")
+		"epic":
+			parts.append("叙事詩")
+	return " / ".join(parts)
+
+
+func _type_label(type: String) -> String:
+	match type:
+		"attack":
+			return "攻撃"
+		"defense":
+			return "防御"
+		"skill":
+			return "スキル"
+		"power":
+			return "特殊"
+		"curse":
+			return "呪い"
+		"status":
+			return "状態"
+		_:
+			return "その他"
+
+
+func _make_button(text: String, center: Vector2, size: Vector2) -> Button:
+	var btn = Button.new()
+	btn.text = text
+	btn.position = center - size / 2.0
+	btn.size = size
+	btn.add_theme_font_size_override("font_size", 16)
+	btn.add_theme_color_override("font_color", Color(0.94, 0.88, 1.0))
+
+	var normal = StyleBoxFlat.new()
+	normal.bg_color = Color(0.12, 0.04, 0.26)
+	normal.border_color = Color(0.55, 0.26, 0.86)
+	normal.set_border_width_all(2)
+	normal.set_corner_radius_all(7)
+	btn.add_theme_stylebox_override("normal", normal)
+
+	var hover = StyleBoxFlat.new()
+	hover.bg_color = Color(0.22, 0.08, 0.48)
+	hover.border_color = Color(0.78, 0.44, 1.0)
+	hover.set_border_width_all(2)
+	hover.set_corner_radius_all(7)
+	btn.add_theme_stylebox_override("hover", hover)
+	btn.add_theme_stylebox_override("pressed", hover)
+	return btn
