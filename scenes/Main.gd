@@ -38,7 +38,9 @@ var _menu_container: VBoxContainer
 var _start_btn: Button
 var _continue_btn: Button
 var _story_btn: Button
+var _settings_btn: Button
 var _quit_btn: Button
+var _settings_panel: Control = null
 var _story_layer: Control
 var _story_bg: TextureRect
 var _story_text: Label
@@ -62,6 +64,8 @@ func _apply_screen_scale() -> void:
 
 func _apply_window_size() -> void:
 	if DisplayServer.get_name() == "headless":
+		return
+	if GameSettings.fullscreen:
 		return
 	DisplayServer.window_set_size(WINDOW_SIZE)
 	var usable_rect := DisplayServer.screen_get_usable_rect()
@@ -114,9 +118,10 @@ func _build_ui() -> void:
 	_menu_container.anchor_right = 0.5
 	_menu_container.anchor_bottom = 1.0
 	_menu_container.offset_left = -MENU_WIDTH / 2.0
-	_menu_container.offset_top = -192.0
+	_menu_container.offset_top = -322.0
 	_menu_container.offset_right = MENU_WIDTH / 2.0
 	_menu_container.offset_bottom = -34.0
+	_menu_container.alignment = BoxContainer.ALIGNMENT_END
 	_menu_container.add_theme_constant_override("separation", 10)
 	_menu_container.modulate.a = 0.0
 	add_child(_menu_container)
@@ -133,6 +138,10 @@ func _build_ui() -> void:
 	_story_btn = _make_button("あらすじ")
 	_story_btn.pressed.connect(_on_story)
 	_menu_container.add_child(_story_btn)
+
+	_settings_btn = _make_button("設定")
+	_settings_btn.pressed.connect(_on_settings)
+	_menu_container.add_child(_settings_btn)
 
 	_quit_btn = _make_button("終了")
 	_quit_btn.pressed.connect(_on_quit)
@@ -233,6 +242,7 @@ func _go_to_map() -> void:
 	_start_btn.disabled = true
 	_continue_btn.disabled = true
 	_story_btn.disabled = true
+	_settings_btn.disabled = true
 	_quit_btn.disabled = true
 	var t = create_tween().set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
 	t.tween_property(self, "modulate:a", 0.0, 0.5)
@@ -245,6 +255,15 @@ func _on_story() -> void:
 	_story_layer.modulate.a = 0.0
 	var t = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 	t.tween_property(_story_layer, "modulate:a", 1.0, 0.2)
+
+func _on_settings() -> void:
+	if _settings_panel == null:
+		_settings_panel = preload("res://scenes/ui/SettingsPanel.gd").new()
+		add_child(_settings_panel)
+		_settings_panel.closed.connect(func(): _settings_panel.visible = false)
+	else:
+		_settings_panel.visible = true
+		_settings_panel.move_to_front()
 
 func _on_quit() -> void:
 	get_tree().quit()

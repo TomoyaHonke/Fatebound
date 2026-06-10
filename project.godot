@@ -25,6 +25,8 @@ config/icon="res://icon.svg"
 GameState="*res://autoload/GameState.gd"
 ScreenScale="*res://autoload/ScreenScale.gd"
 SaveManager="*res://autoload/SaveManager.gd"
+GameSettings="*res://autoload/GameSettings.gd"
+PauseOverlay="*res://autoload/PauseOverlay.gd"
 
 [display]
 
