@@ -15,3 +15,5 @@ export_presets.cfg
 *.dmg
 *.zip
 *.app
+# Claude Code local settings
+.claude/settings.local.json
