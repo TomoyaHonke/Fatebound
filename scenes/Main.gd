@@ -36,6 +36,7 @@ var _bottom_scrim: ColorRect
 var _mist: Control
 var _menu_container: VBoxContainer
 var _start_btn: Button
+var _continue_btn: Button
 var _story_btn: Button
 var _quit_btn: Button
 var _story_layer: Control
@@ -120,7 +121,11 @@ func _build_ui() -> void:
 	_menu_container.modulate.a = 0.0
 	add_child(_menu_container)
 
-	# Keep the container ready for a future Continue button without changing flow now.
+	_continue_btn = _make_button("続きから")
+	_continue_btn.pressed.connect(_on_continue)
+	_continue_btn.visible = SaveManager.has_run_save()
+	_menu_container.add_child(_continue_btn)
+
 	_start_btn = _make_button("ゲーム開始")
 	_start_btn.pressed.connect(_on_start)
 	_menu_container.add_child(_start_btn)
@@ -212,7 +217,21 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _on_start() -> void:
+	SaveManager.delete_run_save()
+	SaveManager.record_run_start()
+	_go_to_map()
+
+func _on_continue() -> void:
+	if not SaveManager.load_run():
+		# セーブが壊れていた場合は新規開始にフォールバック
+		_continue_btn.visible = false
+		GameState.reset_run()
+		SaveManager.record_run_start()
+	_go_to_map()
+
+func _go_to_map() -> void:
 	_start_btn.disabled = true
+	_continue_btn.disabled = true
 	_story_btn.disabled = true
 	_quit_btn.disabled = true
 	var t = create_tween().set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)

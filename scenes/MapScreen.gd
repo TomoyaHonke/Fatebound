@@ -50,6 +50,7 @@ func _ready() -> void:
 	_build_ui()
 	_refresh()
 	_center_graph_on_current()
+	SaveManager.save_run()
 
 func _apply_screen_scale() -> void:
 	var scaler = get_node_or_null("/root/ScreenScale")
@@ -401,6 +402,7 @@ func _complete_relic_node(node_id: String) -> void:
 	_finish_map_node_completion()
 
 func _finish_map_node_completion() -> void:
+	SaveManager.save_run()
 	_selected_id = ""
 	_info_title.text = "─"
 	_info_desc.text = "次の目的地を\n選択してください。"

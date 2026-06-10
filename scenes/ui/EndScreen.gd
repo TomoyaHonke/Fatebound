@@ -6,6 +6,7 @@ var _victory: bool = false
 
 func show_end(is_victory: bool) -> void:
 	_victory = is_victory
+	SaveManager.record_run_end(is_victory)
 	visible = true
 	modulate.a = 0.0
 	_build()
