@@ -696,7 +696,7 @@ const ENEMIES: Dictionary = {
 		"id": "holy_soldier", "enemy_id": "holy_soldier", "name": "聖都兵", "name_jp": "聖都兵", "enemy_name": "聖都兵", "display_name": "聖都兵",
 		"image_path": "res://assets/enemies/holy_soldier.png", "sprite_path": "res://assets/enemies/holy_soldier.png",
 		"max_hp": 36, "hp": 36, "attack": 7, "block": 6, "enemy_type": "holy_soldier", "turn_count": 0, "next_action": {}, "is_boss": false,
-		"shape": "sprite_enemy", "sprite_scale": 0.68, "sprite_offset": Vector2(0, 142), "enemy_name_offset": Vector2(0, -240), "enemy_hp_offset": Vector2(0, -214), "enemy_status_offset": Vector2(0, -190), "hp_bar_width": 166.0, "intent_offset": Vector2(225, -78), "glow_color": Color(0.95, 0.82, 0.38), "aura_color": Color(0.95, 0.82, 0.38), "aura_strength": 0.12, "shadow_scale": Vector2(1.20, 1.0)
+		"shape": "sprite_enemy", "sprite_scale": 0.63, "sprite_offset": Vector2(0, 157), "enemy_name_offset": Vector2(0, -240), "enemy_hp_offset": Vector2(0, -214), "enemy_status_offset": Vector2(0, -190), "hp_bar_width": 166.0, "intent_offset": Vector2(225, -78), "glow_color": Color(0.95, 0.82, 0.38), "aura_color": Color(0.95, 0.82, 0.38), "aura_strength": 0.12, "shadow_scale": Vector2(1.20, 1.0)
 	},
 	"temple_archer": {
 		"id": "temple_archer", "enemy_id": "temple_archer", "name": "神殿弓兵", "name_jp": "神殿弓兵", "enemy_name": "神殿弓兵", "display_name": "神殿弓兵",
@@ -750,25 +750,25 @@ const ENEMIES: Dictionary = {
 		"id": "white_shield_knight", "enemy_id": "white_shield_knight", "name": "白盾の騎士", "name_jp": "白盾の騎士", "enemy_name": "白盾の騎士", "display_name": "白盾の騎士",
 		"image_path": "res://assets/enemies/white_shield_knight.png", "sprite_path": "res://assets/enemies/white_shield_knight.png",
 		"max_hp": 88, "hp": 88, "attack": 11, "block": 15, "enemy_type": "white_shield_knight", "turn_count": 0, "next_action": {}, "is_boss": false,
-		"shape": "sprite_enemy", "sprite_scale": 0.60, "sprite_offset": Vector2(0, 148), "enemy_name_offset": Vector2(0, -254), "enemy_hp_offset": Vector2(0, -228), "enemy_status_offset": Vector2(0, -204), "hp_bar_width": 196.0, "intent_offset": Vector2(225, -82), "glow_color": Color(0.88, 0.92, 1.0), "aura_color": Color(0.88, 0.92, 1.0), "aura_strength": 0.12, "shadow_scale": Vector2(1.18, 0.94)
+		"shape": "sprite_enemy", "sprite_scale": 0.59, "sprite_offset": Vector2(0, 154), "enemy_name_offset": Vector2(0, -254), "enemy_hp_offset": Vector2(0, -228), "enemy_status_offset": Vector2(0, -204), "hp_bar_width": 196.0, "intent_offset": Vector2(225, -82), "glow_color": Color(0.88, 0.92, 1.0), "aura_color": Color(0.88, 0.92, 1.0), "aura_strength": 0.12, "shadow_scale": Vector2(1.18, 0.94)
 	},
 	"fallen_saint": {
 		"id": "fallen_saint", "enemy_id": "fallen_saint", "name": "偽りの聖女", "name_jp": "偽りの聖女", "enemy_name": "偽りの聖女", "display_name": "偽りの聖女",
 		"image_path": "res://assets/enemies/fallen_saint.png", "sprite_path": "res://assets/enemies/fallen_saint.png",
 		"max_hp": 76, "hp": 76, "attack": 9, "block": 10, "enemy_type": "fallen_saint", "turn_count": 0, "next_action": {}, "is_boss": false,
-		"shape": "sprite_enemy", "sprite_scale": 0.58, "sprite_offset": Vector2(0, 150), "enemy_name_offset": Vector2(0, -254), "enemy_hp_offset": Vector2(0, -228), "enemy_status_offset": Vector2(0, -204), "hp_bar_width": 190.0, "intent_offset": Vector2(225, -82), "glow_color": Color(0.96, 0.70, 0.96), "aura_color": Color(0.96, 0.70, 0.96), "aura_strength": 0.11, "shadow_scale": Vector2(1.12, 0.92)
+		"shape": "sprite_enemy", "sprite_scale": 0.58, "sprite_offset": Vector2(0, 153), "enemy_name_offset": Vector2(0, -254), "enemy_hp_offset": Vector2(0, -228), "enemy_status_offset": Vector2(0, -204), "hp_bar_width": 190.0, "intent_offset": Vector2(225, -82), "glow_color": Color(0.96, 0.70, 0.96), "aura_color": Color(0.96, 0.70, 0.96), "aura_strength": 0.11, "shadow_scale": Vector2(1.12, 0.92)
 	},
 	"sage_of_the_party": {
 		"id": "sage_of_the_party", "enemy_id": "sage_of_the_party", "name": "叡智の賢者", "name_jp": "叡智の賢者", "enemy_name": "叡智の賢者", "display_name": "叡智の賢者",
 		"image_path": "res://assets/enemies/sage_of_the_party.png", "sprite_path": "res://assets/enemies/sage_of_the_party.png",
 		"max_hp": 72, "hp": 72, "attack": 12, "block": 8, "enemy_type": "sage_of_the_party", "turn_count": 0, "next_action": {}, "is_boss": false,
-		"shape": "sprite_enemy", "sprite_scale": 0.58, "sprite_offset": Vector2(0, 150), "enemy_name_offset": Vector2(0, -254), "enemy_hp_offset": Vector2(0, -228), "enemy_status_offset": Vector2(0, -204), "hp_bar_width": 190.0, "intent_offset": Vector2(225, -82), "glow_color": Color(0.54, 0.72, 1.0), "aura_color": Color(0.54, 0.72, 1.0), "aura_strength": 0.12, "shadow_scale": Vector2(1.10, 0.92)
+		"shape": "sprite_enemy", "sprite_scale": 0.56, "sprite_offset": Vector2(0, 150), "enemy_name_offset": Vector2(0, -254), "enemy_hp_offset": Vector2(0, -228), "enemy_status_offset": Vector2(0, -204), "hp_bar_width": 190.0, "intent_offset": Vector2(225, -82), "glow_color": Color(0.54, 0.72, 1.0), "aura_color": Color(0.54, 0.72, 1.0), "aura_strength": 0.12, "shadow_scale": Vector2(1.10, 0.92)
 	},
 	"hunter_companion": {
 		"id": "hunter_companion", "enemy_id": "hunter_companion", "name": "かつての狩人", "name_jp": "かつての狩人", "enemy_name": "かつての狩人", "display_name": "かつての狩人",
 		"image_path": "res://assets/enemies/hunter_companion.png", "sprite_path": "res://assets/enemies/hunter_companion.png",
 		"max_hp": 70, "hp": 70, "attack": 6, "block": 9, "enemy_type": "hunter_companion", "turn_count": 0, "next_action": {}, "is_boss": false,
-		"shape": "sprite_enemy", "sprite_scale": 0.58, "sprite_offset": Vector2(0, 150), "enemy_name_offset": Vector2(0, -254), "enemy_hp_offset": Vector2(0, -228), "enemy_status_offset": Vector2(0, -204), "hp_bar_width": 190.0, "intent_offset": Vector2(225, -82), "glow_color": Color(0.70, 0.82, 0.52), "aura_color": Color(0.70, 0.82, 0.52), "aura_strength": 0.10, "shadow_scale": Vector2(1.12, 0.90)
+		"shape": "sprite_enemy", "sprite_scale": 0.58, "sprite_offset": Vector2(0, 161), "enemy_name_offset": Vector2(0, -254), "enemy_hp_offset": Vector2(0, -228), "enemy_status_offset": Vector2(0, -204), "hp_bar_width": 190.0, "intent_offset": Vector2(225, -82), "glow_color": Color(0.70, 0.82, 0.52), "aura_color": Color(0.70, 0.82, 0.52), "aura_strength": 0.10, "shadow_scale": Vector2(1.12, 0.90)
 	},
 	"hero": {
 		"id": "hero", "enemy_id": "hero", "name": "勇者", "name_jp": "勇者", "enemy_name": "勇者", "display_name": "勇者",
@@ -786,7 +786,7 @@ const ENEMIES: Dictionary = {
 		"id": "mercenary_axeman", "enemy_id": "mercenary_axeman", "name": "傭兵斧使い", "name_jp": "傭兵斧使い", "enemy_name": "傭兵斧使い", "display_name": "傭兵斧使い",
 		"image_path": "res://assets/enemies/mercenary_axeman.png", "sprite_path": "res://assets/enemies/mercenary_axeman.png",
 		"max_hp": 56, "hp": 56, "attack": 12, "block": 6, "enemy_type": "mercenary_axeman", "turn_count": 0, "next_action": {}, "charged_attack": false, "is_boss": false,
-		"shape": "sprite_enemy", "sprite_scale": 0.60, "sprite_offset": Vector2(0, 150), "enemy_name_offset": Vector2(0, -250), "enemy_hp_offset": Vector2(0, -224), "enemy_status_offset": Vector2(0, -200), "hp_bar_width": 184.0, "intent_offset": Vector2(225, -78), "glow_color": Color(0.86, 0.48, 0.30), "aura_color": Color(0.86, 0.48, 0.30), "aura_strength": 0.09, "shadow_scale": Vector2(1.18, 0.92)
+		"shape": "sprite_enemy", "sprite_scale": 0.57, "sprite_offset": Vector2(0, 151), "enemy_name_offset": Vector2(0, -250), "enemy_hp_offset": Vector2(0, -224), "enemy_status_offset": Vector2(0, -200), "hp_bar_width": 184.0, "intent_offset": Vector2(225, -78), "glow_color": Color(0.86, 0.48, 0.30), "aura_color": Color(0.86, 0.48, 0.30), "aura_strength": 0.09, "shadow_scale": Vector2(1.18, 0.92)
 	},
 	"poison_rogue": {
 		"id": "poison_rogue", "enemy_id": "poison_rogue", "name": "毒刃の盗賊", "name_jp": "毒刃の盗賊", "enemy_name": "毒刃の盗賊", "display_name": "毒刃の盗賊",
@@ -810,19 +810,19 @@ const ENEMIES: Dictionary = {
 		"id": "war_wolf", "enemy_id": "war_wolf", "name": "戦狼", "name_jp": "戦狼", "enemy_name": "戦狼", "display_name": "戦狼",
 		"image_path": "res://assets/enemies/war_wolf.png", "sprite_path": "res://assets/enemies/war_wolf.png",
 		"max_hp": 44, "hp": 44, "attack": 5, "block": 5, "enemy_type": "war_wolf", "turn_count": 0, "next_action": {}, "is_boss": false,
-		"shape": "sprite_enemy", "sprite_scale": 0.58, "sprite_offset": Vector2(0, 150), "enemy_name_offset": Vector2(0, -248), "enemy_hp_offset": Vector2(0, -222), "enemy_status_offset": Vector2(0, -198), "hp_bar_width": 176.0, "intent_offset": Vector2(225, -78), "glow_color": Color(0.76, 0.62, 0.52), "aura_color": Color(0.76, 0.62, 0.52), "aura_strength": 0.10, "shadow_scale": Vector2(1.12, 0.86)
+		"shape": "sprite_enemy", "sprite_scale": 0.58, "sprite_offset": Vector2(0, 186), "enemy_name_offset": Vector2(0, -248), "enemy_hp_offset": Vector2(0, -222), "enemy_status_offset": Vector2(0, -198), "hp_bar_width": 176.0, "intent_offset": Vector2(225, -78), "glow_color": Color(0.76, 0.62, 0.52), "aura_color": Color(0.76, 0.62, 0.52), "aura_strength": 0.10, "shadow_scale": Vector2(1.12, 0.86)
 	},
 	"wyvern_dragon": {
 		"id": "wyvern_dragon", "enemy_id": "wyvern_dragon", "name": "飛竜", "name_jp": "飛竜", "enemy_name": "飛竜", "display_name": "飛竜",
 		"image_path": "res://assets/enemies/wyvern_dragon.png", "sprite_path": "res://assets/enemies/wyvern_dragon.png",
 		"max_hp": 90, "hp": 90, "attack": 13, "block": 10, "enemy_type": "wyvern_dragon", "turn_count": 0, "next_action": {}, "charged_attack": false, "is_boss": false,
-		"shape": "sprite_enemy", "sprite_scale": 0.62, "sprite_offset": Vector2(8, 132), "enemy_name_offset": Vector2(0, -254), "enemy_hp_offset": Vector2(0, -228), "enemy_status_offset": Vector2(0, -204), "hp_bar_width": 196.0, "intent_offset": Vector2(235, -88), "glow_color": Color(1.0, 0.42, 0.24), "aura_color": Color(1.0, 0.42, 0.24), "aura_strength": 0.13, "shadow_scale": Vector2(1.35, 0.96)
+		"shape": "sprite_enemy", "sprite_scale": 0.6, "sprite_offset": Vector2(8, 163), "enemy_name_offset": Vector2(0, -254), "enemy_hp_offset": Vector2(0, -228), "enemy_status_offset": Vector2(0, -204), "hp_bar_width": 196.0, "intent_offset": Vector2(235, -88), "glow_color": Color(1.0, 0.42, 0.24), "aura_color": Color(1.0, 0.42, 0.24), "aura_strength": 0.13, "shadow_scale": Vector2(1.35, 0.96)
 	},
 	"stone_golem": {
 		"id": "stone_golem", "enemy_id": "stone_golem", "name": "石像ゴーレム", "name_jp": "石像ゴーレム", "enemy_name": "石像ゴーレム", "display_name": "石像ゴーレム",
 		"image_path": "res://assets/enemies/stone_golem.png", "sprite_path": "res://assets/enemies/stone_golem.png",
 		"max_hp": 92, "hp": 92, "attack": 12, "block": 18, "enemy_type": "stone_golem", "turn_count": 0, "next_action": {}, "is_boss": false,
-		"shape": "sprite_enemy", "sprite_scale": 0.64, "sprite_offset": Vector2(0, 138), "enemy_name_offset": Vector2(0, -254), "enemy_hp_offset": Vector2(0, -228), "enemy_status_offset": Vector2(0, -204), "hp_bar_width": 196.0, "intent_offset": Vector2(225, -82), "glow_color": Color(0.58, 0.62, 0.64), "aura_color": Color(0.58, 0.62, 0.64), "aura_strength": 0.08, "shadow_scale": Vector2(1.30, 0.96)
+		"shape": "sprite_enemy", "sprite_scale": 0.635, "sprite_offset": Vector2(0, 172), "enemy_name_offset": Vector2(0, -254), "enemy_hp_offset": Vector2(0, -228), "enemy_status_offset": Vector2(0, -204), "hp_bar_width": 196.0, "intent_offset": Vector2(225, -82), "glow_color": Color(0.58, 0.62, 0.64), "aura_color": Color(0.58, 0.62, 0.64), "aura_strength": 0.08, "shadow_scale": Vector2(1.30, 0.96)
 	},
 	"dark_fairy": {
 		"id": "dark_fairy", "enemy_id": "dark_fairy", "name": "闇妖精", "name_jp": "闇妖精", "enemy_name": "闇妖精", "display_name": "闇妖精",

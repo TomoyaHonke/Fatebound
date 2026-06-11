@@ -56,9 +56,8 @@ const BOTTOM_UI_TOP_Y = 488.0
 const ENERGY_PANEL_POS = Vector2(10, 514)
 const ENERGY_PANEL_SIZE = Vector2(168, 180)
 const ENERGY_ORB_SIZE = Vector2(76, 102)  # 上76x76がオーブ、下にピップ列
-# 敵スプライト(x≈673〜967)と重ならないよう、左寄り(プレイヤーHUDの右)に置く
-const ENEMY_INFO_AREA_POS = Vector2(250, 34)
-const ENEMY_INFO_AREA_SIZE = Vector2(380, 70)
+const ENEMY_INFO_AREA_POS = Vector2(458, 34)
+const ENEMY_INFO_AREA_SIZE = Vector2(724, 70)
 const ENEMY_INFO_CARD_SIZE = Vector2(260, 56)
 
 # ── State ─────────────────────────────────────────────────────────────────────
@@ -398,7 +397,7 @@ func _build_enemy_info_area() -> void:
 	_enemy_info_area.name = "EnemyInfoCards"
 	_enemy_info_area.position = ENEMY_INFO_AREA_POS
 	_enemy_info_area.size = ENEMY_INFO_AREA_SIZE
-	_enemy_info_area.alignment = BoxContainer.ALIGNMENT_BEGIN
+	_enemy_info_area.alignment = BoxContainer.ALIGNMENT_CENTER
 	_enemy_info_area.add_theme_constant_override("separation", 12)
 	_enemy_info_area.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_enemy_info_area.z_index = 80
