@@ -339,11 +339,14 @@ func _show_icon_tooltip(source: Control, text: String) -> void:
 	var panel_w = clampf(float(text.length()) * 12.0 + 18.0, 110.0, 250.0)
 	_tooltip_panel.size = Vector2(panel_w, 28)
 	_tooltip_label.size = _tooltip_panel.size - Vector2(16, 8)
-	var global_pos = source.global_position + Vector2(0, source.size.y + 5)
+	# global系は実ピクセル、size系はデザイン座標なのでUIスケールを掛けて揃える
+	var ui_scale = source.get_global_transform().get_scale()
+	var global_pos = source.global_position + Vector2(0, (source.size.y + 5.0) * ui_scale.y)
 	var viewport_size = get_viewport_rect().size
-	global_pos.x = clampf(global_pos.x, 8.0, maxf(8.0, viewport_size.x - _tooltip_panel.size.x - 8.0))
-	global_pos.y = clampf(global_pos.y, 8.0, maxf(8.0, viewport_size.y - _tooltip_panel.size.y - 8.0))
-	_tooltip_panel.position = global_pos - global_position
+	var real_size = _tooltip_panel.size * ui_scale
+	global_pos.x = clampf(global_pos.x, 8.0, maxf(8.0, viewport_size.x - real_size.x - 8.0))
+	global_pos.y = clampf(global_pos.y, 8.0, maxf(8.0, viewport_size.y - real_size.y - 8.0))
+	_tooltip_panel.global_position = global_pos
 	_tooltip_panel.visible = true
 
 func _hide_icon_tooltip() -> void:

@@ -449,9 +449,7 @@ func _update_player_status_badges() -> void:
 		if not StatusBadges.SPECS.has(status_id):
 			text = "%s %d" % [_status_name(status_id), value]
 		var badge = StatusBadges.make_badge(status_id, text)
-		badge.mouse_entered.connect(func():
-			_show_status_tooltip({status_id: value},
-				badge.global_position + Vector2(0, badge.size.y + 8)))
+		badge.mouse_entered.connect(func(): _show_status_tooltip({status_id: value}, badge))
 		badge.mouse_exited.connect(_hide_status_tooltip)
 		_player_status_row.add_child(badge)
 
@@ -481,7 +479,7 @@ func _ensure_status_tooltip() -> void:
 	_status_tooltip_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_status_tooltip_panel.add_child(_status_tooltip_label)
 
-func _show_status_tooltip(statuses: Dictionary, anchor_pos: Vector2) -> void:
+func _show_status_tooltip(statuses: Dictionary, anchor: Control) -> void:
 	var text = _status_tooltip_text(statuses)
 	if text.is_empty():
 		_hide_status_tooltip()
@@ -492,7 +490,14 @@ func _show_status_tooltip(statuses: Dictionary, anchor_pos: Vector2) -> void:
 	_status_tooltip_panel.size = panel_size
 	_status_tooltip_label.text = text
 	_status_tooltip_label.size = panel_size - Vector2(20, 16)
-	_status_tooltip_panel.global_position = _clamped_tooltip_position(anchor_pos, panel_size)
+	# global系は実ピクセル、size系はデザイン座標なのでUIスケールを掛けて揃える
+	var ui_scale = anchor.get_global_transform().get_scale()
+	var global_pos = anchor.global_position + Vector2(0, (anchor.size.y + 8.0) * ui_scale.y)
+	var viewport_size = get_viewport_rect().size
+	var real_size = panel_size * ui_scale
+	global_pos.x = clampf(global_pos.x, 8.0, maxf(8.0, viewport_size.x - real_size.x - 8.0))
+	global_pos.y = clampf(global_pos.y, 8.0, maxf(8.0, viewport_size.y - real_size.y - 8.0))
+	_status_tooltip_panel.global_position = global_pos
 	_status_tooltip_panel.visible = true
 
 func _hide_status_tooltip() -> void:
@@ -526,13 +531,6 @@ func _active_status_count(statuses: Dictionary) -> int:
 		if int(statuses.get(status_id, 0)) > 0:
 			count += 1
 	return count
-
-func _clamped_tooltip_position(anchor_pos: Vector2, panel_size: Vector2) -> Vector2:
-	var viewport_size = get_viewport_rect().size
-	var pos = anchor_pos
-	pos.x = clampf(pos.x, 8.0, maxf(8.0, viewport_size.x - panel_size.x - 8.0))
-	pos.y = clampf(pos.y, 8.0, maxf(8.0, viewport_size.y - panel_size.y - 8.0))
-	return pos
 
 func _update_card_playability() -> void:
 	_prune_card_nodes()
@@ -892,13 +890,13 @@ func _preview_damage(card_data: Dictionary, base: int) -> int:
 	return _preview_damage_to_enemy(player_damage)
 
 func _preview_damage_to_enemy(amount: int) -> int:
+	# 表示はバフ/デバフ(筋力・脱力・脆弱)のみ反映する。
+	# 敵ブロックの吸収は一時的な状態なのでカードの数字には含めない。
 	if not _enemy_node:
 		return amount
 	var actual = amount
 	if _enemy_node.statuses.get("vulnerable", 0) > 0:
 		actual = int(actual * 1.5)
-	var absorbed = mini(_enemy_node.block, actual)
-	actual -= absorbed
 	return maxi(0, actual)
 
 func _preview_block(base: int) -> int:
