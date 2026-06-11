@@ -300,6 +300,44 @@ class EnergyOrb extends Control:
 				OrnateFrame.draw_gem(self, pos, 4.4, 0.40, Color(0.30, 0.24, 0.42))
 
 
+class ImpactBurst extends Node2D:
+	## カード着弾時の小さな光の破裂(リング+火花)。再生後に自動で消える。
+	const DURATION := 0.30
+
+	var color: Color = Color(1.0, 0.42, 0.30)
+	var _t: float = 0.0
+	var _spark_angles: Array = []
+
+	func _ready() -> void:
+		z_index = 30
+		for i in 9:
+			_spark_angles.append(randf() * TAU)
+
+	func _process(delta: float) -> void:
+		_t += delta / DURATION
+		if _t >= 1.0:
+			queue_free()
+			return
+		queue_redraw()
+
+	func _draw() -> void:
+		var expand = 1.0 - pow(1.0 - _t, 2.0)
+		var fade = 1.0 - _t
+		# 中心の閃光
+		draw_circle(Vector2.ZERO, 4.0 + 14.0 * (1.0 - expand), Color(1.0, 0.96, 0.88, fade * 0.75))
+		# 広がるリング
+		draw_arc(Vector2.ZERO, 10.0 + 38.0 * expand, 0.0, TAU, 28,
+			Color(color, fade * 0.85), 1.5 + 3.5 * fade)
+		draw_arc(Vector2.ZERO, 6.0 + 26.0 * expand, 0.0, TAU, 24,
+			Color(color.lightened(0.35), fade * 0.45), 1.2)
+		# 火花
+		for a in _spark_angles:
+			var dir = Vector2(cos(a), sin(a))
+			var inner = dir * (10.0 + 34.0 * expand)
+			var outer = dir * (16.0 + 44.0 * expand)
+			draw_line(inner, outer, Color(color.lightened(0.25), fade * 0.80), 1.6)
+
+
 class FrameOverlay extends Control:
 	## 任意のControlの子に置くと、その矩形に装飾フレームを重ね描きする。
 	const OrnateFrame = preload("res://scenes/ui/OrnateFrame.gd")

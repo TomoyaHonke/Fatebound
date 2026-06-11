@@ -655,7 +655,13 @@ func _set_next_enemy_intent() -> void:
 #  Card Hand
 # ═══════════════════════════════════════════════════════════════════════════════
 
-func _refresh_hand() -> void:
+func _refresh_hand(slide_from_current: bool = false) -> void:
+	# カード使用後はその場からスライドして詰める。ターン開始時などは配り直し演出。
+	var old_positions: Array = []
+	if slide_from_current:
+		for cn in _card_nodes:
+			if is_instance_valid(cn):
+				old_positions.append(cn.position)
 	# Clear old card nodes
 	for cn in _card_nodes:
 		if is_instance_valid(cn):
@@ -699,12 +705,18 @@ func _refresh_hand() -> void:
 		cn.set_base_scale(Vector2(card_scale, card_scale))
 		cn.card_clicked.connect(_on_card_played)
 		_card_nodes.append(cn)
-		# Animate in
-		cn.modulate.a = 0.0
-		cn.position.y = HAND_Y + 30
-		var t = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
-		t.tween_property(cn, "modulate:a", 1.0, 0.2).set_delay(i * 0.04)
-		t.parallel().tween_property(cn, "position:y", HAND_Y, 0.2).set_delay(i * 0.04)
+		if slide_from_current and i < old_positions.size():
+			# 既存カードは元の位置から滑らかにスライド
+			cn.position = Vector2(old_positions[i].x, HAND_Y)
+			var t = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+			t.tween_property(cn, "position:x", target_x, 0.16)
+		else:
+			# Animate in
+			cn.modulate.a = 0.0
+			cn.position.y = HAND_Y + 30
+			var t = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+			t.tween_property(cn, "modulate:a", 1.0, 0.2).set_delay(i * 0.04)
+			t.parallel().tween_property(cn, "position:y", HAND_Y, 0.2).set_delay(i * 0.04)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  Card Play
@@ -742,18 +754,91 @@ func _on_card_played(card_index: int) -> void:
 	GameState.hand.remove_at(card_index)
 	GameState.discard.append(card_ref)
 
-	# Animate the played card flying toward enemy
+	# カード飛行演出 — 着弾した瞬間に効果が発生する
 	if card_node:
-		var t = create_tween().set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
-		t.tween_property(card_node, "position", Vector2(700, 250), 0.18)
-		t.parallel().tween_property(card_node, "modulate:a", 0.0, 0.18)
-		t.tween_callback(card_node.queue_free)
-
+		await _animate_card_flight(card_node, card_data)
 	await _apply_effects(card_data)
 	if card_data.get("type", "") == "attack" and not GameState.first_attack_used_this_combat:
 		GameState.first_attack_used_this_combat = true
 	if _player_turn and _enemy_node and _enemy_node.current_hp > 0 and GameState.player_hp > 0:
 		_busy = false
+
+func _animate_card_flight(card_node: Control, card_data: Dictionary) -> void:
+	card_node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card_node.z_index = 25
+	var is_attack = card_data.get("type", "") == "attack"
+	var type_color: Color = {
+		"attack": Color(0.95, 0.30, 0.26),
+		"defense": Color(0.38, 0.58, 0.95),
+	}.get(card_data.get("type", ""), Color(0.36, 0.80, 0.78))
+
+	# 行き先: 攻撃は敵へ、それ以外は自分へ
+	var target_point: Vector2
+	if is_attack and _enemy_node:
+		target_point = _enemy_node.position + Vector2(0, -90)
+	elif _player_silhouette:
+		target_point = _player_silhouette.position + Vector2(0, -40)
+	else:
+		target_point = Vector2(640, 320)
+
+	# ① 掴み — わずかに拡大して光る
+	var pop = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	pop.tween_property(card_node, "scale", card_node.scale * 1.15, 0.09)
+	pop.parallel().tween_property(card_node, "modulate", Color(1.30, 1.24, 1.06), 0.09)
+	pop.parallel().tween_property(card_node, "position:y", card_node.position.y - 14.0, 0.09)
+	await pop.finished
+	if not is_instance_valid(card_node):
+		return
+
+	# ② 飛行 — 弧を描いて縮小・回転しながら飛ぶ(毎回少しランダム)
+	var start_pos = card_node.position
+	var end_pos = target_point - Vector2(CARD_W * 0.5, CARD_H * 0.7)
+	var ctrl = (start_pos + end_pos) * 0.5 + Vector2(randf_range(-50.0, 50.0), -70.0 - randf_range(0.0, 40.0))
+	var fly = create_tween()
+	fly.tween_method(func(t: float):
+		if is_instance_valid(card_node):
+			card_node.position = start_pos.lerp(ctrl, t).lerp(ctrl.lerp(end_pos, t), t)
+	, 0.0, 1.0, 0.24).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+	fly.parallel().tween_property(card_node, "scale", card_node.scale * 0.40, 0.24)
+	fly.parallel().tween_property(card_node, "rotation", randf_range(-0.35, 0.35), 0.24)
+	for i in 3:
+		fly.parallel().tween_callback(_spawn_card_ghost.bind(card_node)).set_delay(0.05 + i * 0.06)
+	await fly.finished
+	if not is_instance_valid(card_node):
+		return
+
+	# ③ 着弾 — バースト+(攻撃なら)画面の微シェイク、カードは消える
+	var burst = CombatVisuals.ImpactBurst.new()
+	burst.color = type_color
+	burst.position = target_point
+	_battle_layer.add_child(burst)
+	if is_attack:
+		_shake_battle_layer()
+	var out = create_tween()
+	out.tween_property(card_node, "modulate:a", 0.0, 0.07)
+	out.tween_callback(card_node.queue_free)
+
+func _spawn_card_ghost(card_node: Control) -> void:
+	if not is_instance_valid(card_node):
+		return
+	var ghost = card_node.duplicate(DUPLICATE_SCRIPTS)
+	ghost.setup(card_node.card_data, 0, true, true)
+	ghost.position = card_node.position
+	ghost.scale = card_node.scale
+	ghost.rotation = card_node.rotation
+	ghost.z_index = 18
+	ghost.modulate = Color(1, 1, 1, 0.30)
+	_hand_container.add_child(ghost)
+	var t = create_tween()
+	t.tween_property(ghost, "modulate:a", 0.0, 0.22)
+	t.tween_callback(ghost.queue_free)
+
+func _shake_battle_layer(strength: float = 4.0) -> void:
+	var t = create_tween()
+	for i in 3:
+		t.tween_property(_battle_layer, "position",
+			Vector2(randf_range(-strength, strength), randf_range(-strength * 0.5, strength * 0.5)), 0.04)
+	t.tween_property(_battle_layer, "position", Vector2.ZERO, 0.05)
 
 func _get_card_node_at(card_index: int):
 	if card_index < 0 or card_index >= _card_nodes.size():
@@ -829,7 +914,7 @@ func _apply_effects(card_data: Dictionary) -> void:
 					GameState.apply_status(status, amount)
 
 	_update_hud()
-	_refresh_hand()
+	_refresh_hand(true)
 	if GameState.player_hp <= 0:
 		_on_player_died()
 
