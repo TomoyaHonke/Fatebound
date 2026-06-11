@@ -48,18 +48,23 @@ var _tooltip_label: Label
 var _status_icon_signature := ""
 var _intent_icon_signature := ""
 
+const OrnateFrame = preload("res://scenes/ui/OrnateFrame.gd")
+
 func setup(enemy_node: Node) -> void:
 	_enemy_node = enemy_node
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	resized.connect(queue_redraw)
 	_build_ui()
 	_update_from_enemy()
 
+func _draw() -> void:
+	OrnateFrame.draw_frame(self, Rect2(Vector2.ZERO, size), 0.55, 8.0)
+
 func _build_ui() -> void:
 	var panel_style = StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.030, 0.026, 0.060, 0.54)
-	panel_style.border_color = Color(0.62, 0.50, 0.28, 0.22)
-	panel_style.set_border_width_all(1)
-	panel_style.set_corner_radius_all(4)
+	panel_style.bg_color = Color(0.030, 0.026, 0.060, 0.66)
+	panel_style.set_border_width_all(0)
+	panel_style.set_corner_radius_all(2)
 	panel_style.set_content_margin_all(3)
 	add_theme_stylebox_override("panel", panel_style)
 

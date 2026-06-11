@@ -300,6 +300,23 @@ class EnergyOrb extends Control:
 				OrnateFrame.draw_gem(self, pos, 4.4, 0.40, Color(0.30, 0.24, 0.42))
 
 
+class FrameOverlay extends Control:
+	## 任意のControlの子に置くと、その矩形に装飾フレームを重ね描きする。
+	const OrnateFrame = preload("res://scenes/ui/OrnateFrame.gd")
+
+	var frame_alpha: float = 1.0
+	var corner: float = 10.0
+	var gem_top: bool = false
+
+	func _ready() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		resized.connect(queue_redraw)
+
+	func _draw() -> void:
+		OrnateFrame.draw_frame(self, Rect2(Vector2.ZERO, size), frame_alpha, corner, gem_top)
+
+
 class ButtonOrnament extends Control:
 	const OrnateFrame = preload("res://scenes/ui/OrnateFrame.gd")
 

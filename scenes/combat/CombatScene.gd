@@ -188,14 +188,16 @@ func _build_ui() -> void:
 	_damage_label.size = Vector2(120, 40)
 	_battle_layer.add_child(_damage_label)
 
-	var deck_btn = _make_button("デッキ", Vector2(1212, 34), Vector2(104, 40))
+	var deck_btn = _make_button("デッキ", Vector2(1206, 34), Vector2(116, 40))
 	deck_btn.add_theme_font_size_override("font_size", 16)
 	deck_btn.pressed.connect(_on_deck_pressed)
+	_decorate_menu_button(deck_btn, "res://assets/ui/icons/deck.svg")
 	_battle_layer.add_child(deck_btn)
 
-	var relic_btn = _make_button("レリック", Vector2(1212, 84), Vector2(104, 40))
+	var relic_btn = _make_button("レリック", Vector2(1206, 84), Vector2(116, 40))
 	relic_btn.add_theme_font_size_override("font_size", 16)
 	relic_btn.pressed.connect(_on_relic_pressed)
+	_decorate_menu_button(relic_btn, "res://assets/ui/icons/relic.svg")
 	_battle_layer.add_child(relic_btn)
 
 	# Reward screen (hidden)
@@ -240,12 +242,10 @@ func _build_player_hud() -> void:
 	_player_hud_panel.position = Vector2(14, 14)
 	_player_hud_panel.size = Vector2(222, 108)
 	var panel_style = StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.038, 0.034, 0.070, 0.90)
-	panel_style.border_color = Color(0.34, 0.26, 0.50, 0.48)
-	panel_style.set_border_width_all(1)
-	panel_style.set_corner_radius_all(8)
+	panel_style.bg_color = Color(0.030, 0.026, 0.058, 0.92)
+	panel_style.set_border_width_all(0)
+	panel_style.set_corner_radius_all(2)
 	_player_hud_panel.add_theme_stylebox_override("panel", panel_style)
-	_player_hud_panel.clip_contents = true
 	add_child(_player_hud_panel)
 
 	# Header strip behind player name
@@ -259,11 +259,27 @@ func _build_player_hud() -> void:
 	header_strip.add_theme_stylebox_override("panel", hs)
 	_player_hud_panel.add_child(header_strip)
 
+	# Ornate frame over the panel
+	var hud_frame = CombatVisuals.FrameOverlay.new()
+	hud_frame.frame_alpha = 0.78
+	hud_frame.corner = 10.0
+	_player_hud_panel.add_child(hud_frame)
+
+	# Player crest (reuses the pentagram card icon, tinted violet)
+	var crest = TextureRect.new()
+	crest.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	crest.stretch_mode = TextureRect.STRETCH_SCALE
+	crest.texture = load("res://assets/cards/icons/abyss_contract.svg")
+	crest.position = Vector2(9, 4)
+	crest.size = Vector2(18, 18)
+	crest.modulate = Color(0.72, 0.52, 1.0, 0.85)
+	_player_hud_panel.add_child(crest)
+
 	# Player name label
 	var name_label = Label.new()
 	name_label.text = "プレイヤー"
-	name_label.position = Vector2(10, 4)
-	name_label.size = Vector2(202, 20)
+	name_label.position = Vector2(32, 4)
+	name_label.size = Vector2(180, 20)
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	name_label.add_theme_font_size_override("font_size", 12)
 	name_label.add_theme_color_override("font_color", Color(0.64, 0.58, 0.76))
@@ -287,6 +303,8 @@ func _build_player_hud() -> void:
 	var bg_s = StyleBoxFlat.new()
 	bg_s.bg_color = Color(0.07, 0.05, 0.12)
 	bg_s.set_corner_radius_all(4)
+	bg_s.border_color = Color(0.62, 0.50, 0.28, 0.55)
+	bg_s.set_border_width_all(1)
 	_hp_bar.add_theme_stylebox_override("background", bg_s)
 	_player_hud_panel.add_child(_hp_bar)
 
@@ -1295,6 +1313,21 @@ func _status_name(status: String) -> String:
 			return "脆弱"
 		_:
 			return status
+
+func _decorate_menu_button(btn: Button, icon_path: String) -> void:
+	if ResourceLoader.exists(icon_path):
+		btn.icon = load(icon_path)
+		btn.expand_icon = true
+		btn.add_theme_color_override("icon_normal_color", Color(0.78, 0.66, 0.42, 0.85))
+		btn.add_theme_color_override("icon_hover_color", Color(0.95, 0.84, 0.58, 1.0))
+		btn.add_theme_color_override("icon_pressed_color", Color(0.95, 0.84, 0.58, 1.0))
+		btn.add_theme_constant_override("icon_max_width", 20)
+		btn.add_theme_constant_override("h_separation", 7)
+		btn.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var frame = CombatVisuals.FrameOverlay.new()
+	frame.frame_alpha = 0.50
+	frame.corner = 7.0
+	btn.add_child(frame)
 
 func _make_button(text: String, position: Vector2, size: Vector2) -> Button:
 	var btn = Button.new()

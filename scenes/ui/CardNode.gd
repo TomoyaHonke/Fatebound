@@ -44,14 +44,16 @@ const COLOR_RARE    = Color(0.40, 0.62, 1.0)
 const COLOR_EPIC    = Color(0.82, 0.42, 1.0)
 
 # ── Icon opacity (tune here) ──────────────────────────────────────────────────
-const ICON_ALPHA_NORMAL     = 0.30
-const ICON_ALPHA_HOVER      = 0.42
-const ICON_ALPHA_UNPLAYABLE = 0.14
+const ICON_ALPHA_NORMAL     = 0.46
+const ICON_ALPHA_HOVER      = 0.62
+const ICON_ALPHA_UNPLAYABLE = 0.20
 
 # ── Per-card art icon (game-icons.net, CC BY 3.0 — see CREDITS.md) ────────────
 const ICON_DIR  = "res://assets/cards/icons/"
-const ICON_SIZE = 78.0
+const ICON_SIZE = 86.0
 static var _icon_cache: Dictionary = {}
+
+const OrnateFrame = preload("res://scenes/ui/OrnateFrame.gd")
 
 var card_data: Dictionary = {}
 var card_index: int = 0
@@ -130,9 +132,9 @@ func _draw() -> void:
 	_draw_round_rect(Rect2(6, CARD_SEP2_Y + 3, CARD_W - 12, CARD_H - CARD_SEP2_Y - 9), 4,
 		Color(type_color.darkened(0.40), alpha * 0.48), true, 1.0)
 
-	# ── Outer border ──────────────────────────────────────────────────────────
-	var border_col = COLOR_HOVER if is_hovered else rarity_color.lerp(type_color.lightened(0.22), 0.45)
-	var border_a   = (0.96 if is_hovered else (0.78 + rarity_level * 0.08)) * alpha
+	# ── Outer border — antique bronze leaning toward the type color ──────────
+	var border_col = COLOR_HOVER if is_hovered else OrnateFrame.BRONZE.lerp(type_color.lightened(0.10), 0.38).lerp(rarity_color, rarity_level * 0.18)
+	var border_a   = (0.96 if is_hovered else (0.72 + rarity_level * 0.08)) * alpha
 	_draw_round_rect(Rect2(0.5, 0.5, CARD_W - 1, CARD_H - 1), 7,
 		Color(border_col, border_a), false, 1.6 + rarity_level * 0.35)
 	if rarity_level >= 1:
@@ -141,6 +143,12 @@ func _draw() -> void:
 	if rarity_level >= 2:
 		_draw_round_rect(Rect2(-1.5, -1.5, CARD_W + 3, CARD_H + 3), 9,
 			Color(COLOR_EPIC, alpha * 0.58), false, 1.1)
+
+	# ── Frame jewelry: top finial + corner gems ───────────────────────────────
+	var gem_col = COLOR_HOVER if is_hovered else OrnateFrame.BRONZE_BRIGHT.lerp(rarity_color, rarity_level * 0.30)
+	OrnateFrame.draw_gem(self, Vector2(CARD_W * 0.5, 0.5), 5.0, alpha * 0.95, gem_col)
+	for gp in [Vector2(1, 1), Vector2(CARD_W - 1, 1), Vector2(CARD_W - 1, CARD_H - 1), Vector2(1, CARD_H - 1)]:
+		OrnateFrame.draw_gem(self, gp, 2.6, alpha * 0.80, gem_col)
 
 	# ── Inner gold hairline border ────────────────────────────────────────────
 	_draw_round_rect(Rect2(5.5, 5.5, CARD_W - 11, CARD_H - 11), 5,
@@ -182,6 +190,7 @@ func _draw() -> void:
 	draw_circle(cost_pos + Vector2(1, 2), COST_RADIUS + 2, Color(0, 0, 0, alpha * 0.42))
 	draw_circle(cost_pos, COST_RADIUS + 2, Color(type_color.lightened(0.24).lerp(rarity_color, rarity_level * 0.22), alpha * (0.65 + rarity_level * 0.10)), false, 2.0 + rarity_level * 0.25)
 	draw_circle(cost_pos, COST_RADIUS, Color(COLOR_COST_BG, alpha))
+	draw_circle(cost_pos, COST_RADIUS + 5.5, Color(OrnateFrame.BRONZE, alpha * 0.55), false, 1.1)
 	draw_circle(cost_pos, COST_RADIUS - 3, Color(type_color, alpha * 0.20), false, 0.8)
 	draw_circle(cost_pos + Vector2(-3, -3), 4.0, Color(1.0, 0.98, 0.92, alpha * 0.20))
 	var cost_value = card_data.get("cost", 0)
@@ -387,9 +396,12 @@ func _draw_card_emblem(type_color: Color, is_hovered: bool) -> void:
 		ea = ICON_ALPHA_HOVER
 	else:
 		ea = ICON_ALPHA_NORMAL
-	var ic = Vector2(CARD_W * 0.5, (CARD_SEP1_Y + CARD_SEP2_Y) * 0.5)
+	var ic = Vector2(CARD_W * 0.5, (CARD_SEP1_Y + CARD_SEP2_Y) * 0.5 - 5.0)
 	var icon_tex = _get_card_icon()
 	if icon_tex:
+		# Radial glow so the icon reads as card art
+		draw_circle(ic, 44.0, Color(type_color, ea * 0.16))
+		draw_circle(ic, 30.0, Color(type_color, ea * 0.24))
 		var lt = type_color.lightened(0.30)
 		var rect = Rect2(ic - Vector2(ICON_SIZE, ICON_SIZE) * 0.5, Vector2(ICON_SIZE, ICON_SIZE))
 		draw_texture_rect(icon_tex, rect, false, Color(lt.r, lt.g, lt.b, ea))

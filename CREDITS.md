@@ -8,6 +8,10 @@ Card art icons are from [game-icons.net](https://game-icons.net), licensed under
 Authors:
 - **Lorc** (https://lorcblog.blogspot.com) — all card icons except the one below
 - **sbed** (https://opengameart.org/content/95-game-icons) — `pressure` (weight-crush)
+- **Quoting** — deck button icon (card-pickup)
+
+UI button icons: `assets/ui/icons/deck.svg` (quoting/card-pickup),
+`assets/ui/icons/relic.svg` (lorc/gem-pendant).
 
 Icons were recolored and composited into the game's card frames; the underlying
 artwork is unmodified. Source icon for each card:
