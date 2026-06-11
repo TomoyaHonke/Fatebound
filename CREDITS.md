@@ -9,9 +9,14 @@ Authors:
 - **Lorc** (https://lorcblog.blogspot.com) — all card icons except the one below
 - **sbed** (https://opengameart.org/content/95-game-icons) — `pressure` (weight-crush)
 - **Quoting** — deck button icon (card-pickup)
+- **Zeromancer** — heal intent icon (heart-plus)
+- **Faithtoken** — temp-card intent icon (card-draw)
 
-UI button icons: `assets/ui/icons/deck.svg` (quoting/card-pickup),
-`assets/ui/icons/relic.svg` (lorc/gem-pendant).
+UI icons in `assets/ui/icons/`:
+deck (quoting/card-pickup), relic (lorc/gem-pendant),
+attack (lorc/crossed-swords), shield (sbed/shield), strength (lorc/mailed-fist),
+vulnerable (lorc/broken-shield), weak (lorc/sword-break), poison (sbed/water-drop),
+heal (zeromancer/heart-plus), cards (faithtoken/card-draw).
 
 Icons were recolored and composited into the game's card frames; the underlying
 artwork is unmodified. Source icon for each card:

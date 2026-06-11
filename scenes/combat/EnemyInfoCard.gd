@@ -49,6 +49,7 @@ var _status_icon_signature := ""
 var _intent_icon_signature := ""
 
 const OrnateFrame = preload("res://scenes/ui/OrnateFrame.gd")
+const StatusBadges = preload("res://scenes/ui/StatusBadges.gd")
 
 func setup(enemy_node: Node) -> void:
 	_enemy_node = enemy_node
@@ -181,41 +182,41 @@ func _action_icon_specs(action: Dictionary) -> Array:
 	match action.get("type", ""):
 		"attack":
 			var value = action.get("value", 0)
-			specs.append(_action_spec("▲", value, ACTION_COLORS["attack"], "攻撃：%sダメージ" % str(value)))
+			specs.append(_action_spec("attack", value, ACTION_COLORS["attack"], "攻撃：%sダメージ" % str(value)))
 		"attack_buff":
 			var value = action.get("value", 0)
 			var buff = action.get("buff", 1)
-			specs.append(_action_spec("▲", value, ACTION_COLORS["attack"], "攻撃：%sダメージ" % str(value)))
-			specs.append(_action_spec("↑", buff, ACTION_COLORS["strength"], "強化：筋力%sを得る" % str(buff)))
+			specs.append(_action_spec("attack", value, ACTION_COLORS["attack"], "攻撃：%sダメージ" % str(value)))
+			specs.append(_action_spec("strength", buff, ACTION_COLORS["strength"], "強化：筋力%sを得る" % str(buff)))
 		"attack_multi":
 			var value = action.get("value", 0)
 			var times = action.get("times", 2)
-			specs.append(_action_spec("▲", "%sx%s" % [value, times], ACTION_COLORS["attack"], "連続攻撃：%sダメージを%s回" % [str(value), str(times)]))
+			specs.append(_action_spec("attack", "%sx%s" % [value, times], ACTION_COLORS["attack"], "連続攻撃：%sダメージを%s回" % [str(value), str(times)]))
 		"attack_add_temp_discard":
 			var value = action.get("value", 0)
-			specs.append(_action_spec("▲", value, ACTION_COLORS["attack"], "攻撃：%sダメージ" % str(value)))
+			specs.append(_action_spec("attack", value, ACTION_COLORS["attack"], "攻撃：%sダメージ" % str(value)))
 			specs.append(_temp_card_spec(action.get("card_id", ""), action.get("amount", 1)))
 		"attack_status":
 			var value = action.get("value", 0)
-			specs.append(_action_spec("▲", value, ACTION_COLORS["attack"], "攻撃：%sダメージ" % str(value)))
+			specs.append(_action_spec("attack", value, ACTION_COLORS["attack"], "攻撃：%sダメージ" % str(value)))
 			specs.append(_icon_spec(action.get("status", "weak"), action.get("amount", 1)))
 		"block":
 			var value = action.get("value", 0)
-			specs.append(_action_spec("■", value, ACTION_COLORS["block"], "防御：ブロック%sを得る" % str(value)))
+			specs.append(_action_spec("block", value, ACTION_COLORS["block"], "防御：ブロック%sを得る" % str(value)))
 		"strength":
 			var buff = action.get("buff", 1)
-			specs.append(_action_spec("↑", buff, ACTION_COLORS["strength"], "強化：筋力%sを得る" % str(buff)))
+			specs.append(_action_spec("strength", buff, ACTION_COLORS["strength"], "強化：筋力%sを得る" % str(buff)))
 		"block_strength":
 			var value = action.get("value", 0)
 			var buff = action.get("buff", 1)
-			specs.append(_action_spec("■", value, ACTION_COLORS["block"], "防御：ブロック%sを得る" % str(value)))
-			specs.append(_action_spec("↑", buff, ACTION_COLORS["strength"], "強化：筋力%sを得る" % str(buff)))
+			specs.append(_action_spec("block", value, ACTION_COLORS["block"], "防御：ブロック%sを得る" % str(value)))
+			specs.append(_action_spec("strength", buff, ACTION_COLORS["strength"], "強化：筋力%sを得る" % str(buff)))
 		"heal", "heal_strength":
 			var value = action.get("value", 0)
-			specs.append(_action_spec("＋", value, ACTION_COLORS["heal"], "回復：HPを%s回復" % str(value)))
+			specs.append(_action_spec("heal", value, ACTION_COLORS["heal"], "回復：HPを%s回復" % str(value)))
 			if action.get("type", "") == "heal_strength":
 				var buff = action.get("buff", 1)
-				specs.append(_action_spec("↑", buff, ACTION_COLORS["strength"], "強化：筋力%sを得る" % str(buff)))
+				specs.append(_action_spec("strength", buff, ACTION_COLORS["strength"], "強化：筋力%sを得る" % str(buff)))
 		"apply_status":
 			specs.append(_icon_spec(action.get("status", "weak"), action.get("amount", 1)))
 		"add_temp_draw", "add_temp_discard":
@@ -243,16 +244,20 @@ func _icon_spec(id: String, value) -> Dictionary:
 			tooltip = "毒：ターンごとにダメージを受ける"
 		_:
 			tooltip = "%s：%s" % [id, str(value)]
-	return _action_spec(meta.get("symbol", "?"), value, meta.get("color", Color.WHITE), tooltip)
+	if StatusBadges.SPECS.has(id):
+		return {"icon": id, "text": str(value), "tooltip": tooltip}
+	return {"text": "%s%s" % [meta.get("symbol", "?"), str(value)], "color": meta.get("color", Color.WHITE), "tooltip": tooltip}
 
 func _temp_card_spec(card_id: String, value) -> Dictionary:
 	var card_name: String = TEMP_CARD_NAMES.get(card_id, "お邪魔")
 	var amount := int(value)
 	var tooltip := "%sカードを%d枚追加" % [card_name, amount]
-	return {"text": "札%d" % amount, "color": TEMP_CARD_COLOR, "tooltip": tooltip}
+	return {"icon": "cards", "text": str(amount), "tooltip": tooltip}
 
-func _action_spec(symbol: String, value, color: Color, tooltip: String = "") -> Dictionary:
-	return {"text": "%s%s" % [symbol, str(value)], "color": color, "tooltip": tooltip}
+func _action_spec(icon_id: String, value, color: Color, tooltip: String = "") -> Dictionary:
+	if StatusBadges.SPECS.has(icon_id):
+		return {"icon": icon_id, "text": str(value), "tooltip": tooltip}
+	return {"text": "%s%s" % [icon_id, str(value)], "color": color, "tooltip": tooltip}
 
 func _set_icon_row(row: HBoxContainer, specs: Array, previous_signature: String) -> String:
 	var signature := _icon_signature(specs)
@@ -268,33 +273,38 @@ func _set_icon_row(row: HBoxContainer, specs: Array, previous_signature: String)
 func _icon_signature(specs: Array) -> String:
 	var parts: Array[String] = []
 	for spec in specs:
-		parts.append("%s:%s" % [spec.get("text", ""), spec.get("tooltip", "")])
+		parts.append("%s|%s:%s" % [spec.get("icon", ""), spec.get("text", ""), spec.get("tooltip", "")])
 	return "|".join(parts)
 
-func _make_icon_label(spec: Dictionary) -> Label:
-	var accent: Color = spec.get("color", Color.WHITE)
-	var label = Label.new()
-	label.text = spec.get("text", "")
-	label.custom_minimum_size = Vector2(34, 20)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.mouse_filter = Control.MOUSE_FILTER_STOP
-	label.add_theme_font_size_override("font_size", 13)
-	label.add_theme_color_override("font_color", Color(0.98, 0.96, 1.0))
-	label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.86))
-	label.add_theme_constant_override("shadow_offset_x", 1)
-	label.add_theme_constant_override("shadow_offset_y", 1)
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(accent.r, accent.g, accent.b, 0.24)
-	style.border_color = Color(accent.r, accent.g, accent.b, 0.50)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(4)
-	style.set_content_margin_all(2)
-	label.add_theme_stylebox_override("normal", style)
+func _make_icon_label(spec: Dictionary) -> Control:
+	var badge: Control
+	if spec.has("icon"):
+		badge = StatusBadges.make_badge(spec["icon"], spec.get("text", ""))
+	else:
+		var accent: Color = spec.get("color", Color.WHITE)
+		var label = Label.new()
+		label.text = spec.get("text", "")
+		label.custom_minimum_size = Vector2(34, 20)
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.mouse_filter = Control.MOUSE_FILTER_STOP
+		label.add_theme_font_size_override("font_size", 13)
+		label.add_theme_color_override("font_color", Color(0.98, 0.96, 1.0))
+		label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.86))
+		label.add_theme_constant_override("shadow_offset_x", 1)
+		label.add_theme_constant_override("shadow_offset_y", 1)
+		var style = StyleBoxFlat.new()
+		style.bg_color = Color(accent.r, accent.g, accent.b, 0.24)
+		style.border_color = Color(accent.r, accent.g, accent.b, 0.50)
+		style.set_border_width_all(1)
+		style.set_corner_radius_all(4)
+		style.set_content_margin_all(2)
+		label.add_theme_stylebox_override("normal", style)
+		badge = label
 	var tooltip_text: String = spec.get("tooltip", "")
-	label.mouse_entered.connect(func(): _show_icon_tooltip(label, tooltip_text))
-	label.mouse_exited.connect(_hide_icon_tooltip)
-	return label
+	badge.mouse_entered.connect(func(): _show_icon_tooltip(badge, tooltip_text))
+	badge.mouse_exited.connect(_hide_icon_tooltip)
+	return badge
 
 func _ensure_tooltip() -> void:
 	if _tooltip_panel:

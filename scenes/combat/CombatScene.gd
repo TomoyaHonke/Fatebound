@@ -15,6 +15,7 @@ const BOSS_RELIC_REWARD_SCENE  = "res://scenes/ui/BossRelicRewardScreen.tscn"
 const EnemyAI       = preload("res://scenes/combat/EnemyAI.gd")
 const EnemyInfoCard = preload("res://scenes/combat/EnemyInfoCard.gd")
 const CombatVisuals = preload("res://scenes/combat/CombatVisuals.gd")
+const StatusBadges  = preload("res://scenes/ui/StatusBadges.gd")
 
 # ── Colors ────────────────────────────────────────────────────────────────────
 const C_BG           = Color(0.035, 0.032, 0.080)
@@ -28,8 +29,9 @@ const C_ENERGY_OFF   = Color(0.18, 0.14, 0.28)
 const C_BTN_NORMAL   = Color(0.18, 0.06, 0.32)
 const C_BTN_HOVER    = Color(0.28, 0.10, 0.50)
 const C_GOLD         = Color(0.90, 0.78, 0.25)
-const STATUS_TOOLTIP_ORDER = ["vulnerable", "weak", "poison", "strength"]
+const STATUS_TOOLTIP_ORDER = ["block", "vulnerable", "weak", "poison", "strength"]
 const STATUS_DESCRIPTIONS = {
+	"block": {"name": "ブロック", "description": "次に受けるダメージを軽減する。", "value_label": "値"},
 	"vulnerable": {"name": "脆弱", "description": "受けるダメージが増加する。", "value_label": "残り"},
 	"weak": {"name": "脱力", "description": "与えるダメージが低下する。", "value_label": "残り"},
 	"poison": {"name": "毒", "description": "ターン終了時にHPを失う。", "value_label": "残り"},
@@ -51,7 +53,6 @@ const BUTTON_AREA_W = 220.0
 const BUTTON_CENTER = Vector2(1168, 598)
 const BUTTON_SIZE = Vector2(196, 72)
 const BOTTOM_UI_TOP_Y = 488.0
-const PLAYER_STATUS_OFFSET = Vector2(12, 82)
 const ENERGY_PANEL_POS = Vector2(10, 514)
 const ENERGY_PANEL_SIZE = Vector2(168, 180)
 const ENERGY_ORB_SIZE = Vector2(76, 102)  # 上76x76がオーブ、下にピップ列
@@ -82,8 +83,8 @@ var _card_nodes:      Array = []
 var _end_turn_btn:    Button
 var _hp_bar:          ProgressBar
 var _hp_label:        Label
-var _block_label:     Label
-var _player_status_label: Label
+var _player_status_row: HBoxContainer
+var _player_status_signature: String = ""
 var _player_hud_panel: Panel
 var _energy_container: Control
 var _energy_orb:       Control
@@ -317,27 +318,12 @@ func _build_player_hud() -> void:
 	_hp_label.add_theme_color_override("font_color", Color(0.90, 0.68, 0.68))
 	_player_hud_panel.add_child(_hp_label)
 
-	# Block label
-	_block_label = Label.new()
-	_block_label.position = Vector2(10, 70)
-	_block_label.size = Vector2(96, 18)
-	_block_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	_block_label.add_theme_font_size_override("font_size", 13)
-	_block_label.add_theme_color_override("font_color", Color(0.45, 0.65, 1.0))
-	_player_hud_panel.add_child(_block_label)
-
-	# Player status badges
-	_player_status_label = Label.new()
-	_player_status_label.position = PLAYER_STATUS_OFFSET
-	_player_status_label.size = Vector2(202, 18)
-	_player_status_label.add_theme_font_size_override("font_size", 12)
-	_player_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_player_status_label.visible = false
-	_player_status_label.mouse_filter = Control.MOUSE_FILTER_STOP
-	_player_status_label.mouse_entered.connect(_on_player_status_mouse_entered)
-	_player_status_label.mouse_exited.connect(_on_player_status_mouse_exited)
-	_style_badge(_player_status_label, Color(0.9, 0.45, 0.25))
-	_player_hud_panel.add_child(_player_status_label)
+	# Block + status badge row (icons with per-badge tooltips)
+	_player_status_row = HBoxContainer.new()
+	_player_status_row.position = Vector2(10, 72)
+	_player_status_row.size = Vector2(202, 24)
+	_player_status_row.add_theme_constant_override("separation", 4)
+	_player_hud_panel.add_child(_player_status_row)
 
 func _build_enemy_info_area() -> void:
 	_enemy_info_area = HBoxContainer.new()
@@ -420,50 +406,54 @@ func _update_hud() -> void:
 	_hp_bar.value = GameState.player_hp
 	_hp_label.text = "%d / %d HP" % [GameState.player_hp, GameState.player_max_hp]
 
-	if GameState.player_block > 0:
-		_block_label.text = "盾 %d" % GameState.player_block
-	else:
-		_block_label.text = ""
-
 	_update_player_status_badges()
 
 	_rebuild_energy_dots()
 	_update_card_playability()
 
 func _update_player_status_badges() -> void:
-	if not _player_status_label:
+	if not _player_status_row:
 		return
-	var parts = _status_badge_parts(GameState.player_statuses)
-	_player_status_label.text = "  ".join(parts)
-	_player_status_label.visible = not parts.is_empty()
-	if parts.is_empty():
-		_hide_status_tooltip()
-
-func _status_badge_parts(statuses: Dictionary) -> Array:
-	var parts: Array = []
+	var entries: Array = []
+	if GameState.player_block > 0:
+		entries.append(["block", GameState.player_block])
+	var statuses: Dictionary = GameState.player_statuses
 	for status_id in STATUS_TOOLTIP_ORDER:
+		if status_id == "block":
+			continue
 		var value = int(statuses.get(status_id, 0))
 		if value > 0:
-			var meta = STATUS_DESCRIPTIONS.get(status_id, {})
-			parts.append("%s %d" % [meta.get("name", _status_name(status_id)), value])
+			entries.append([status_id, value])
 	for status_id in statuses.keys():
 		if STATUS_TOOLTIP_ORDER.has(status_id):
 			continue
 		var value = int(statuses.get(status_id, 0))
 		if value > 0:
-			parts.append("%s %d" % [_status_name(status_id), value])
-	return parts
+			entries.append([status_id, value])
 
-func _on_player_status_mouse_entered() -> void:
-	if not _player_status_label or not _player_status_label.visible:
+	var signature_parts: Array[String] = []
+	for entry in entries:
+		signature_parts.append("%s:%d" % [entry[0], entry[1]])
+	var signature = "|".join(signature_parts)
+	if signature == _player_status_signature:
 		return
-	_player_status_label.modulate = Color(1.16, 1.16, 1.16, 1.0)
-	_show_status_tooltip(GameState.player_statuses, _player_status_label.global_position + Vector2(0, _player_status_label.size.y + 8))
+	_player_status_signature = signature
 
-func _on_player_status_mouse_exited() -> void:
-	if _player_status_label:
-		_player_status_label.modulate = Color.WHITE
 	_hide_status_tooltip()
+	for child in _player_status_row.get_children():
+		child.queue_free()
+	for entry in entries:
+		var status_id: String = entry[0]
+		var value: int = entry[1]
+		var text = str(value)
+		if not StatusBadges.SPECS.has(status_id):
+			text = "%s %d" % [_status_name(status_id), value]
+		var badge = StatusBadges.make_badge(status_id, text)
+		badge.mouse_entered.connect(func():
+			_show_status_tooltip({status_id: value},
+				badge.global_position + Vector2(0, badge.size.y + 8)))
+		badge.mouse_exited.connect(_hide_status_tooltip)
+		_player_status_row.add_child(badge)
 
 func _ensure_status_tooltip() -> void:
 	if _status_tooltip_panel:
@@ -1363,16 +1353,3 @@ func _make_button(text: String, position: Vector2, size: Vector2) -> Button:
 	style_d.set_corner_radius_all(5)
 	btn.add_theme_stylebox_override("disabled", style_d)
 	return btn
-
-func _style_badge(label: Label, accent: Color) -> void:
-	label.add_theme_color_override("font_color", Color(0.94, 0.88, 1.0))
-	label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
-	label.add_theme_constant_override("shadow_offset_x", 1)
-	label.add_theme_constant_override("shadow_offset_y", 1)
-	var badge = StyleBoxFlat.new()
-	badge.bg_color = Color(0.035, 0.030, 0.065, 0.88)
-	badge.border_color = Color(accent, 0.70)
-	badge.set_border_width_all(1)
-	badge.set_corner_radius_all(5)
-	badge.set_content_margin_all(4)
-	label.add_theme_stylebox_override("normal", badge)
