@@ -396,30 +396,34 @@ func _make_choice_panel(choice: Dictionary, blocked_text: String) -> PanelContai
 	var is_blocked := not blocked_text.is_empty()
 
 	var sn := StyleBoxFlat.new()
-	sn.bg_color = Color(0.10, 0.07, 0.22)
-	sn.border_color = Color(0.48, 0.22, 0.78, 0.70)
+	sn.bg_color = Color(0.085, 0.040, 0.175, 0.97)
+	sn.border_color = Color(0.46, 0.26, 0.70, 0.62)
 	sn.set_border_width_all(1)
-	sn.set_corner_radius_all(7)
+	sn.set_corner_radius_all(5)
+	sn.shadow_color = Color(0.40, 0.14, 0.72, 0.22)
+	sn.shadow_size = 5
 	sn.content_margin_left = 12
 	sn.content_margin_right = 12
 	sn.content_margin_top = 8
 	sn.content_margin_bottom = 8
 
 	var sh := StyleBoxFlat.new()
-	sh.bg_color = Color(0.20, 0.08, 0.42)
-	sh.border_color = Color(0.72, 0.38, 1.0)
-	sh.set_border_width_all(2)
-	sh.set_corner_radius_all(7)
+	sh.bg_color = Color(0.155, 0.070, 0.32, 0.98)
+	sh.border_color = Color(0.74, 0.46, 0.98, 0.85)
+	sh.set_border_width_all(1)
+	sh.set_corner_radius_all(5)
+	sh.shadow_color = Color(0.56, 0.24, 0.92, 0.40)
+	sh.shadow_size = 9
 	sh.content_margin_left = 12
 	sh.content_margin_right = 12
 	sh.content_margin_top = 8
 	sh.content_margin_bottom = 8
 
 	var sd := StyleBoxFlat.new()
-	sd.bg_color = Color(0.07, 0.05, 0.15)
-	sd.border_color = Color(0.30, 0.15, 0.50, 0.40)
+	sd.bg_color = Color(0.055, 0.045, 0.115, 0.92)
+	sd.border_color = Color(0.22, 0.16, 0.34, 0.50)
 	sd.set_border_width_all(1)
-	sd.set_corner_radius_all(7)
+	sd.set_corner_radius_all(5)
 	sd.content_margin_left = 12
 	sd.content_margin_right = 12
 	sd.content_margin_top = 8
@@ -498,20 +502,7 @@ func _make_action_btn(text: String, center: Vector2) -> Button:
 	btn.position = center - sz / 2.0
 	btn.size = sz
 	btn.add_theme_font_size_override("font_size", 18)
-	btn.add_theme_color_override("font_color", Color(0.94, 0.88, 1.0))
-	var sn = StyleBoxFlat.new()
-	sn.bg_color = Color(0.12, 0.04, 0.26)
-	sn.border_color = Color(0.55, 0.26, 0.86)
-	sn.set_border_width_all(2)
-	sn.set_corner_radius_all(9)
-	btn.add_theme_stylebox_override("normal", sn)
-	var sh = StyleBoxFlat.new()
-	sh.bg_color = Color(0.22, 0.08, 0.48)
-	sh.border_color = Color(0.78, 0.44, 1.0)
-	sh.set_border_width_all(2)
-	sh.set_corner_radius_all(9)
-	btn.add_theme_stylebox_override("hover", sh)
-	btn.add_theme_stylebox_override("pressed", sh)
+	preload("res://scenes/ui/UIStyle.gd").style_button(btn, 5.0, true)
 	return btn
 
 

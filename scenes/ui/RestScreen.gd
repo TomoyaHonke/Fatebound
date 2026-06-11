@@ -48,12 +48,7 @@ func _build_ui() -> void:
 	var panel = _panel
 	panel.position = Vector2(360, 96)
 	panel.size = Vector2(560, 500)
-	var ps = StyleBoxFlat.new()
-	ps.bg_color = Color(0.030, 0.024, 0.055, 0.84)
-	ps.border_color = Color(C_GOLD.r, C_GOLD.g, C_GOLD.b, 0.40)
-	ps.set_border_width_all(2)
-	ps.set_corner_radius_all(10)
-	panel.add_theme_stylebox_override("panel", ps)
+	preload("res://scenes/ui/UIStyle.gd").style_panel(panel, 0.78)
 	add_child(panel)
 
 	var header = Label.new()
@@ -87,11 +82,16 @@ func _build_ui() -> void:
 	desc.add_theme_color_override("font_color", C_TEXT)
 	panel.add_child(desc)
 
-	var hp_bar_bg = ColorRect.new()
-	hp_bar_bg.position = Vector2(80, 170)
-	hp_bar_bg.size = Vector2(400, 16)
-	hp_bar_bg.color = Color(0.08, 0.06, 0.14)
-	panel.add_child(hp_bar_bg)
+	var hp_bar_frame = Panel.new()
+	hp_bar_frame.position = Vector2(78, 168)
+	hp_bar_frame.size = Vector2(404, 20)
+	var hp_frame_style = StyleBoxFlat.new()
+	hp_frame_style.bg_color = Color(0.08, 0.06, 0.14)
+	hp_frame_style.border_color = Color(0.62, 0.50, 0.28, 0.60)
+	hp_frame_style.set_border_width_all(1)
+	hp_frame_style.set_corner_radius_all(3)
+	hp_bar_frame.add_theme_stylebox_override("panel", hp_frame_style)
+	panel.add_child(hp_bar_frame)
 
 	var hp_fill = ColorRect.new()
 	var fill_pct = float(GameState.player_hp) / float(GameState.player_max_hp)
@@ -239,20 +239,7 @@ func _make_choice_btn(text: String, center: Vector2) -> Button:
 	btn.position = center - sz / 2.0
 	btn.size = sz
 	btn.add_theme_font_size_override("font_size", 16)
-	btn.add_theme_color_override("font_color", Color(0.90, 0.84, 1.0))
-	var sn = StyleBoxFlat.new()
-	sn.bg_color = Color(0.10, 0.07, 0.22)
-	sn.border_color = Color(0.48, 0.22, 0.78, 0.70)
-	sn.set_border_width_all(1)
-	sn.set_corner_radius_all(7)
-	btn.add_theme_stylebox_override("normal", sn)
-	var sh = StyleBoxFlat.new()
-	sh.bg_color = Color(0.20, 0.08, 0.42)
-	sh.border_color = Color(0.72, 0.38, 1.0)
-	sh.set_border_width_all(2)
-	sh.set_corner_radius_all(7)
-	btn.add_theme_stylebox_override("hover", sh)
-	btn.add_theme_stylebox_override("pressed", sh)
+	preload("res://scenes/ui/UIStyle.gd").style_button(btn)
 	return btn
 
 
@@ -262,20 +249,7 @@ func _make_small_btn(text: String, center: Vector2, size: Vector2) -> Button:
 	btn.position = center - size / 2.0
 	btn.size = size
 	btn.add_theme_font_size_override("font_size", 13)
-	btn.add_theme_color_override("font_color", Color(0.94, 0.88, 1.0))
-	var sn = StyleBoxFlat.new()
-	sn.bg_color = Color(0.10, 0.07, 0.20)
-	sn.border_color = Color(0.45, 0.24, 0.66, 0.70)
-	sn.set_border_width_all(1)
-	sn.set_corner_radius_all(6)
-	btn.add_theme_stylebox_override("normal", sn)
-	var sh = StyleBoxFlat.new()
-	sh.bg_color = Color(0.20, 0.08, 0.42)
-	sh.border_color = Color(0.72, 0.38, 1.0)
-	sh.set_border_width_all(1)
-	sh.set_corner_radius_all(6)
-	btn.add_theme_stylebox_override("hover", sh)
-	btn.add_theme_stylebox_override("pressed", sh)
+	preload("res://scenes/ui/UIStyle.gd").style_button(btn)
 	return btn
 
 
@@ -303,20 +277,7 @@ func _make_action_btn(text: String, center: Vector2) -> Button:
 	btn.position = center - sz / 2.0
 	btn.size = sz
 	btn.add_theme_font_size_override("font_size", 18)
-	btn.add_theme_color_override("font_color", Color(0.94, 0.88, 1.0))
-	var sn = StyleBoxFlat.new()
-	sn.bg_color = Color(0.12, 0.04, 0.26)
-	sn.border_color = Color(0.55, 0.26, 0.86)
-	sn.set_border_width_all(2)
-	sn.set_corner_radius_all(9)
-	btn.add_theme_stylebox_override("normal", sn)
-	var sh = StyleBoxFlat.new()
-	sh.bg_color = Color(0.22, 0.08, 0.48)
-	sh.border_color = Color(0.78, 0.44, 1.0)
-	sh.set_border_width_all(2)
-	sh.set_corner_radius_all(9)
-	btn.add_theme_stylebox_override("hover", sh)
-	btn.add_theme_stylebox_override("pressed", sh)
+	preload("res://scenes/ui/UIStyle.gd").style_button(btn, 5.0, true)
 	return btn
 
 
