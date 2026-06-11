@@ -11,6 +11,7 @@ Authors:
 - **Quoting** — deck button icon (card-pickup)
 - **Zeromancer** — heal intent icon (heart-plus)
 - **Faithtoken** — temp-card intent icon (card-draw)
+- **Delapouite** (https://delapouite.com) — executioner-hood
 
 UI icons in `assets/ui/icons/`:
 deck (quoting/card-pickup), relic (lorc/gem-pendant),
@@ -20,6 +21,16 @@ heal (zeromancer/heart-plus), cards (faithtoken/card-draw),
 node_elite (lorc/crowned-skull), node_boss (sbed/death-skull),
 node_rest (lorc/campfire), node_event (lorc/uncertainty),
 node_treasure (lorc/locked-chest).
+
+Relic icons in `assets/ui/icons/relics/` (named by relic id):
+broken_oath_badge (lorc/medal), avenger_ring (lorc/skull-ring),
+old_wound_bandage (lorc/bandage-roll), cracked_amulet (lorc/gem-pendant),
+fallen_feather (lorc/feather), memory_of_betrayal (lorc/broken-heart),
+bloodied_blade_shard (lorc/shard-sword), pact_brand (lorc/wax-seal),
+executioner_mask (delapouite/executioner-hood), rotted_crown (lorc/crown-of-thorns),
+abyss_core (lorc/floating-crystal), chain_of_judgement (lorc/crossed-chains),
+fate_severing_thread (lorc/swirl-string), former_hunter_bow (lorc/pocket-bow),
+hunter_tracking_eye (lorc/beast-eye), hunter_trapwire (lorc/wolf-trap).
 
 Icons were recolored and composited into the game's card frames; the underlying
 artwork is unmodified. Source icon for each card:

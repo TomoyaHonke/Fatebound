@@ -169,10 +169,15 @@ class _RelicEntry extends Control:
 	func _build() -> void:
 		var rarity = relic_data.get("rarity", "common")
 
+		var medallion = preload("res://scenes/ui/RelicMedallion.gd").new()
+		medallion.position = Vector2(PAD_X, (H - 52.0) / 2.0)
+		add_child(medallion)
+		medallion.setup(relic_data.get("id", ""), 52.0, false)
+
 		var name_lbl = Label.new()
 		name_lbl.text = relic_data.get("name_jp", "")
-		name_lbl.position = Vector2(PAD_X, NAME_Y)
-		name_lbl.size = Vector2(LEFT_W, NAME_H)
+		name_lbl.position = Vector2(PAD_X + 60.0, NAME_Y)
+		name_lbl.size = Vector2(LEFT_W - 60.0, NAME_H)
 		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		name_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -182,8 +187,8 @@ class _RelicEntry extends Control:
 
 		var rar_lbl = Label.new()
 		rar_lbl.text = _rarity_text(rarity)
-		rar_lbl.position = Vector2(PAD_X, RARITY_Y)
-		rar_lbl.size = Vector2(LEFT_W, RARITY_H)
+		rar_lbl.position = Vector2(PAD_X + 60.0, RARITY_Y)
+		rar_lbl.size = Vector2(LEFT_W - 60.0, RARITY_H)
 		rar_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		rar_lbl.add_theme_font_size_override("font_size", 9)
 		rar_lbl.add_theme_color_override("font_color", _rarity_label_color(rarity))

@@ -150,6 +150,7 @@ func _build_ui() -> void:
 
 	# HUD panel (top-left: player stats)
 	_build_player_hud()
+	_build_relic_strip()
 
 	# Enemy info cards (top-center, kept away from enemy portraits)
 	_build_enemy_info_area()
@@ -324,6 +325,22 @@ func _build_player_hud() -> void:
 	_player_status_row.size = Vector2(202, 24)
 	_player_status_row.add_theme_constant_override("separation", 4)
 	_player_hud_panel.add_child(_player_status_row)
+
+func _build_relic_strip() -> void:
+	# 所持レリックの常時表示(HUD下、6個ごとに折り返し)
+	if GameState.owned_relic_ids.is_empty():
+		return
+	var grid = GridContainer.new()
+	grid.name = "RelicStrip"
+	grid.columns = 6
+	grid.position = Vector2(14, 130)
+	grid.add_theme_constant_override("h_separation", 5)
+	grid.add_theme_constant_override("v_separation", 5)
+	add_child(grid)
+	for relic_id in GameState.owned_relic_ids:
+		var m = preload("res://scenes/ui/RelicMedallion.gd").new()
+		grid.add_child(m)
+		m.setup(relic_id, 30.0, true)
 
 func _build_enemy_info_area() -> void:
 	_enemy_info_area = HBoxContainer.new()

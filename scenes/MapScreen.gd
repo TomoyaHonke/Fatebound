@@ -36,6 +36,8 @@ var _info_title: Label
 var _info_desc: Label
 var _enter_btn: Button
 var _hp_label: Label
+var _relic_strip: HBoxContainer
+var _relic_strip_signature: String = ""
 var _deck_viewer: Control
 var _relic_viewer: Control
 var _phase: float = 0.0
@@ -130,10 +132,17 @@ func _build_top_bar() -> void:
 
 	_hp_label = Label.new()
 	_hp_label.position = Vector2(16, 14)
-	_hp_label.size = Vector2(220, 26)
+	_hp_label.size = Vector2(130, 26)
 	_hp_label.add_theme_font_size_override("font_size", 15)
 	_hp_label.add_theme_color_override("font_color", Color(0.90, 0.55, 0.55))
 	add_child(_hp_label)
+
+	# 所持レリックの常時表示(HPの右)
+	_relic_strip = HBoxContainer.new()
+	_relic_strip.name = "RelicStrip"
+	_relic_strip.position = Vector2(150, 11)
+	_relic_strip.add_theme_constant_override("separation", 5)
+	add_child(_relic_strip)
 
 
 func _build_legend() -> void:
@@ -305,6 +314,22 @@ func _refresh() -> void:
 
 	if _hp_label:
 		_hp_label.text = "♥  %d / %d" % [GameState.player_hp, GameState.player_max_hp]
+
+	_refresh_relic_strip()
+
+func _refresh_relic_strip() -> void:
+	if not _relic_strip:
+		return
+	var signature = "|".join(GameState.owned_relic_ids)
+	if signature == _relic_strip_signature:
+		return
+	_relic_strip_signature = signature
+	for child in _relic_strip.get_children():
+		child.queue_free()
+	for relic_id in GameState.owned_relic_ids:
+		var m = preload("res://scenes/ui/RelicMedallion.gd").new()
+		_relic_strip.add_child(m)
+		m.setup(relic_id, 30.0, true)
 
 
 func _on_node_clicked(node_id: String) -> void:

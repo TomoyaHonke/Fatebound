@@ -128,7 +128,7 @@ func _build_ui() -> void:
 
 	var credit = Label.new()
 	credit.name = "IconCredit"
-	credit.text = "Card icons: Lorc, sbed / game-icons.net (CC BY 3.0)"
+	credit.text = "Icons: Lorc, Delapouite & contributors / game-icons.net (CC BY 3.0)"
 	credit.add_theme_font_size_override("font_size", 10)
 	credit.add_theme_color_override("font_color", Color(0.62, 0.58, 0.52, 0.42))
 	credit.anchor_top = 1.0
