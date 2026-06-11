@@ -9,6 +9,9 @@ const DECK_VIEWER_SCENE   = "res://scenes/ui/DeckViewer.tscn"
 const RELIC_VIEWER_SCENE  = "res://scenes/ui/RelicViewer.tscn"
 const RELIC_CHOICE_SCENE  = "res://scenes/ui/RelicChoiceScreen.tscn"
 
+const CombatVisuals = preload("res://scenes/combat/CombatVisuals.gd")
+const OrnateFrame   = preload("res://scenes/ui/OrnateFrame.gd")
+
 const C_BG     = Color(0.018, 0.014, 0.026)
 const C_GOLD   = Color(0.86, 0.72, 0.34)
 const C_PURPLE = Color(0.55, 0.20, 0.90)
@@ -20,8 +23,8 @@ const GRAPH_CONTENT_SIZE := Vector2(1080, 1120)
 const GRAPH_SCROLL_STEP := 54.0
 const GRAPH_DRAG_THRESHOLD := 8.0
 const GRAPH_NODE_CLICK_R := NODE_R + 6.0
-const TOP_RIGHT_BUTTON_POS := Vector2(1078, 11)
-const TOP_RIGHT_BUTTON_SIZE := Vector2(92, 34)
+const TOP_RIGHT_BUTTON_POS := Vector2(1054, 11)
+const TOP_RIGHT_BUTTON_SIZE := Vector2(104, 34)
 const TOP_RIGHT_BUTTON_GAP := 10
 
 var _graph_viewport: Control
@@ -207,6 +210,10 @@ func _build_info_panel() -> void:
 	_enter_btn = _make_button("進む", Vector2(90, 238), Vector2(138, 44))
 	_enter_btn.visible = false
 	_enter_btn.pressed.connect(_on_enter_pressed)
+	var enter_frame = CombatVisuals.FrameOverlay.new()
+	enter_frame.frame_alpha = 0.55
+	enter_frame.corner = 8.0
+	_enter_btn.add_child(enter_frame)
 	panel.add_child(_enter_btn)
 
 
@@ -225,6 +232,10 @@ func _build_node_buttons() -> void:
 		btn.node_clicked.connect(_on_node_clicked)
 		_graph_content.add_child(btn)
 		_node_btns[node_id] = btn
+		# 入場演出: マップ奥から手前へ波及するフェードイン
+		btn.modulate.a = 0.0
+		var t = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+		t.tween_property(btn, "modulate:a", 1.0, 0.25).set_delay(0.05 + pos.y * 0.0005)
 
 
 func _build_top_right_buttons() -> void:
@@ -240,10 +251,12 @@ func _build_top_right_buttons() -> void:
 
 	var relic_btn = _make_top_right_button("レリック", "RelicButton")
 	relic_btn.pressed.connect(_on_relic_pressed)
+	_decorate_menu_button(relic_btn, "res://assets/ui/icons/relic.svg")
 	container.add_child(relic_btn)
 
 	var deck_btn = _make_top_right_button("デッキ", "DeckButton")
 	deck_btn.pressed.connect(_on_deck_pressed)
+	_decorate_menu_button(deck_btn, "res://assets/ui/icons/deck.svg")
 	container.add_child(deck_btn)
 
 func _make_top_right_button(text: String, node_name: String) -> Button:
@@ -572,11 +585,14 @@ func _make_panel(pos: Vector2, sz: Vector2) -> Panel:
 	panel.position = pos
 	panel.size = sz
 	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.038, 0.030, 0.072, 0.90)
-	style.border_color = Color(C_GOLD.r, C_GOLD.g, C_GOLD.b, 0.32)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(6)
+	style.bg_color = Color(0.030, 0.026, 0.058, 0.92)
+	style.set_border_width_all(0)
+	style.set_corner_radius_all(2)
 	panel.add_theme_stylebox_override("panel", style)
+	var frame = CombatVisuals.FrameOverlay.new()
+	frame.frame_alpha = 0.70
+	frame.corner = 10.0
+	panel.add_child(frame)
 	return panel
 
 func _make_button(text: String, center: Vector2, sz: Vector2) -> Button:
@@ -587,19 +603,38 @@ func _make_button(text: String, center: Vector2, sz: Vector2) -> Button:
 	btn.add_theme_font_size_override("font_size", 18)
 	btn.add_theme_color_override("font_color", Color(0.94, 0.88, 1.0))
 	var sn = StyleBoxFlat.new()
-	sn.bg_color = Color(0.12, 0.04, 0.26)
-	sn.border_color = Color(0.55, 0.26, 0.86)
-	sn.set_border_width_all(2)
-	sn.set_corner_radius_all(8)
+	sn.bg_color = Color(0.085, 0.040, 0.175, 0.97)
+	sn.border_color = Color(0.46, 0.26, 0.70, 0.62)
+	sn.set_border_width_all(1)
+	sn.set_corner_radius_all(5)
+	sn.shadow_color = Color(0.40, 0.14, 0.72, 0.22)
+	sn.shadow_size = 5
 	btn.add_theme_stylebox_override("normal", sn)
 	var sh = StyleBoxFlat.new()
-	sh.bg_color = Color(0.22, 0.08, 0.48)
-	sh.border_color = Color(0.78, 0.44, 1.0)
-	sh.set_border_width_all(2)
-	sh.set_corner_radius_all(8)
+	sh.bg_color = Color(0.155, 0.070, 0.32, 0.98)
+	sh.border_color = Color(0.74, 0.46, 0.98, 0.85)
+	sh.set_border_width_all(1)
+	sh.set_corner_radius_all(5)
+	sh.shadow_color = Color(0.56, 0.24, 0.92, 0.40)
+	sh.shadow_size = 9
 	btn.add_theme_stylebox_override("hover", sh)
 	btn.add_theme_stylebox_override("pressed", sh)
 	return btn
+
+func _decorate_menu_button(btn: Button, icon_path: String) -> void:
+	if ResourceLoader.exists(icon_path):
+		btn.icon = load(icon_path)
+		btn.expand_icon = true
+		btn.add_theme_color_override("icon_normal_color", Color(0.78, 0.66, 0.42, 0.85))
+		btn.add_theme_color_override("icon_hover_color", Color(0.95, 0.84, 0.58, 1.0))
+		btn.add_theme_color_override("icon_pressed_color", Color(0.95, 0.84, 0.58, 1.0))
+		btn.add_theme_constant_override("icon_max_width", 18)
+		btn.add_theme_constant_override("h_separation", 6)
+		btn.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var frame = CombatVisuals.FrameOverlay.new()
+	frame.frame_alpha = 0.50
+	frame.corner = 7.0
+	btn.add_child(frame)
 
 func _add_background(background_key: String, overlay_color: Color) -> void:
 	var bg = TextureRect.new()
@@ -625,17 +660,18 @@ func _add_background(background_key: String, overlay_color: Color) -> void:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 class _TopStrip extends Node2D:
+	const OrnateFrame = preload("res://scenes/ui/OrnateFrame.gd")
+
 	func _draw() -> void:
 		draw_rect(Rect2(0, 0, 1280, 52), Color(0.025, 0.020, 0.048, 0.95), true)
-		draw_line(Vector2(0, 52), Vector2(1280, 52), Color(0.70, 0.56, 0.24, 0.45), 1.2)
-		draw_line(Vector2(0, 53), Vector2(1280, 53), Color(0.10, 0.08, 0.18, 0.60), 1.0)
-		var gold = Color(0.82, 0.68, 0.28, 0.60)
-		draw_line(Vector2(10, 10), Vector2(36, 10), gold, 1.4)
-		draw_line(Vector2(10, 10), Vector2(10, 36), gold, 1.4)
-		draw_circle(Vector2(10, 10), 2.5, gold)
-		draw_line(Vector2(1270, 10), Vector2(1244, 10), gold, 1.4)
-		draw_line(Vector2(1270, 10), Vector2(1270, 36), gold, 1.4)
-		draw_circle(Vector2(1270, 10), 2.5, gold)
+		# 下端のブロンズ二重縁+中央の飾り
+		draw_line(Vector2(0, 54), Vector2(1280, 54), Color(OrnateFrame.EDGE_DARK, 0.80), 2.0)
+		draw_line(Vector2(0, 52), Vector2(1280, 52), Color(OrnateFrame.BRONZE, 0.62), 1.8)
+		draw_line(Vector2(0, 50), Vector2(1280, 50), Color(OrnateFrame.BRONZE_BRIGHT, 0.18), 1.0)
+		OrnateFrame.draw_gem(self, Vector2(640, 52), 5.0, 0.80)
+		# 左右コーナー飾り
+		OrnateFrame.draw_corner(self, Vector2(10, 10), Vector2(640, 26), 14.0, 0.62)
+		OrnateFrame.draw_corner(self, Vector2(1270, 10), Vector2(640, 26), 14.0, 0.62)
 
 
 class _MapCanvas extends Node2D:
@@ -677,20 +713,58 @@ class _MapCanvas extends Node2D:
 				var avail_to     = available_nodes.has(to_id)
 
 				if visited_from and visited_to:
-					draw_line(from_pos, to_pos, Color(0.76, 0.44, 1.0, 0.24), 9.0)
-					draw_line(from_pos, to_pos, Color(0.88, 0.70, 0.30, 0.40), 5.0)
-					draw_line(from_pos, to_pos, Color(0.72, 0.32, 1.0, 0.88), 2.8)
+					# 通った道: 落ち着いた金の実線
+					draw_line(from_pos, to_pos, Color(0.05, 0.04, 0.09, 0.55), 5.0)
+					draw_line(from_pos, to_pos, Color(0.84, 0.68, 0.32, 0.62), 2.2)
 				elif visited_from and avail_to:
-					draw_line(from_pos, to_pos, Color(0.90, 0.70, 0.24, 0.26), 8.0)
-					draw_line(from_pos, to_pos, Color(0.82, 0.64, 0.22, 0.84), 2.8)
+					# 行ける道: 明るい金の点線(流れるアニメ)
+					draw_line(from_pos, to_pos, Color(0.90, 0.72, 0.28, 0.14), 7.0)
+					_draw_dashed(from_pos, to_pos, Color(1.0, 0.84, 0.40, 0.92), 2.6)
 				else:
-					draw_line(from_pos, to_pos, Color(0.20, 0.14, 0.30, 0.34), 3.2)
-					draw_line(from_pos, to_pos, Color(0.44, 0.34, 0.58, 0.32), 1.4)
+					draw_line(from_pos, to_pos, Color(0.16, 0.12, 0.24, 0.32), 2.6)
+					draw_line(from_pos, to_pos, Color(0.40, 0.32, 0.54, 0.26), 1.2)
+
+	func _draw_dashed(from_pos: Vector2, to_pos: Vector2, color: Color, width: float) -> void:
+		const DASH := 7.0
+		const GAP := 6.0
+		var dir = to_pos - from_pos
+		var length = dir.length()
+		if length < 1.0:
+			return
+		dir = dir / length
+		var step = DASH + GAP
+		var offset = fmod(phase * 18.0, step)
+		var d = -offset
+		while d < length:
+			var a = clampf(d, 0.0, length)
+			var b = clampf(d + DASH, 0.0, length)
+			if b > a:
+				draw_line(from_pos + dir * a, from_pos + dir * b, color, width)
+			d += step
 
 
 # _NodeButton is a Control so mouse_entered/exited and _gui_input work correctly.
 class _NodeButton extends Control:
 	signal node_clicked(node_id: String)
+
+	const OrnateFrame = preload("res://scenes/ui/OrnateFrame.gd")
+
+	# ノード種別 → アイコンと色
+	const TYPE_META = {
+		"normal_battle": {"icon": "attack",        "color": Color(0.86, 0.36, 0.32)},
+		"elite_battle":  {"icon": "node_elite",    "color": Color(0.95, 0.55, 0.25)},
+		"rest":          {"icon": "node_rest",     "color": Color(0.45, 0.85, 0.55)},
+		"event":         {"icon": "node_event",    "color": Color(0.70, 0.50, 0.95)},
+		"treasure":      {"icon": "node_treasure", "color": Color(0.92, 0.78, 0.38)},
+		"boss":          {"icon": "node_boss",     "color": Color(0.95, 0.30, 0.40)},
+		"start":         {"icon": "relic",         "color": Color(0.55, 0.75, 0.95)},
+		"starter_relic": {"icon": "relic",         "color": Color(0.55, 0.75, 0.95)},
+		"relic":         {"icon": "relic",         "color": Color(0.55, 0.75, 0.95)},
+		"initial_relic": {"icon": "relic",         "color": Color(0.55, 0.75, 0.95)},
+		"relic_reward":  {"icon": "relic",         "color": Color(0.55, 0.75, 0.95)},
+	}
+
+	static var _icon_cache: Dictionary = {}
 
 	var node_id:     String = ""
 	var node_type:   String = "normal_battle"
@@ -716,107 +790,69 @@ class _NodeButton extends Control:
 		var r = size.x * 0.5
 		return pt.distance_to(size * 0.5) <= r
 
+	func _type_color() -> Color:
+		return TYPE_META.get(node_type, {}).get("color", Color(0.70, 0.66, 0.86))
+
 	func _draw() -> void:
 		var c   = size * 0.5
 		var r   = size.x * 0.5
-		var pulse = 1.0 + sin(phase * 2.2) * 0.04
+		var pulse = 0.5 + sin(phase * 2.2) * 0.5  # 0..1
+		var tc  = _type_color()
 		if _hovered and state == "selectable":
 			r *= 1.10
 
 		match state:
 			"current":
 				for i in range(5, 0, -1):
-					draw_circle(c, r + i * 3.5 * pulse, Color(0.50, 0.15, 0.88, 0.05 * i))
-				draw_circle(c, r, Color(0.22, 0.08, 0.42))
-				draw_circle(c, r, Color(0.72, 0.40, 1.0, 0.92), false, 3.0)
+					draw_circle(c, r + i * 3.5, Color(0.50, 0.15, 0.88, (0.04 + pulse * 0.02) * i))
+				draw_circle(c, r, Color(0.20, 0.09, 0.38))
+				draw_circle(c, r + 3.0, Color(OrnateFrame.BRONZE_BRIGHT, 0.85), false, 1.4)
+				draw_circle(c, r, Color(0.78, 0.46, 1.0, 0.95), false, 2.6)
 			"selectable":
-				if is_selected or _hovered:
-					for i in range(4, 0, -1):
-						draw_circle(c, r + i * 2.8 * pulse, Color(0.85, 0.70, 0.22, 0.06 * i))
-				draw_circle(c, r, Color(0.16, 0.12, 0.26))
-				var bc = Color(1.0, 0.86, 0.38) if (is_selected or _hovered) else Color(0.82, 0.68, 0.24, 0.85)
-				draw_circle(c, r, bc, false, 2.5)
+				# 常時ゆっくり脈打つタイプ色のグロー(hover/選択でさらに強く)
+				var glow_boost = 1.6 if (is_selected or _hovered) else 1.0
+				for i in range(4, 0, -1):
+					draw_circle(c, r + i * 3.0, Color(tc, (0.030 + pulse * 0.030) * i * glow_boost))
+				draw_circle(c, r, Color(0.10, 0.08, 0.18, 0.96))
+				draw_circle(c, r, Color(tc.darkened(0.25), 0.50))
+				var ring = Color(1.0, 0.88, 0.46) if (is_selected or _hovered) else tc.lerp(Color(OrnateFrame.BRONZE_BRIGHT), 0.35)
+				draw_circle(c, r, Color(ring, 0.95), false, 2.4)
+				draw_circle(c, r - 3.5, Color(tc.lightened(0.25), 0.30), false, 1.0)
 			"visited":
-				draw_circle(c, r, Color(0.10, 0.08, 0.18))
-				draw_circle(c, r, Color(0.42, 0.34, 0.62, 0.58), false, 1.8)
+				draw_circle(c, r, Color(0.09, 0.075, 0.15))
+				draw_circle(c, r, Color(0.40, 0.34, 0.56, 0.50), false, 1.6)
 			"locked":
-				draw_circle(c, r, Color(0.06, 0.05, 0.10))
-				draw_circle(c, r, Color(0.20, 0.16, 0.28, 0.38), false, 1.5)
+				draw_circle(c, r, Color(0.055, 0.048, 0.095))
+				draw_circle(c, r, Color(0.20, 0.16, 0.28, 0.35), false, 1.4)
 
 		_draw_icon(c, r)
 
+		# 選択中マーカー: 4方位のひし形
+		if is_selected and state == "selectable":
+			for offset in [Vector2(0, -r - 7), Vector2(r + 7, 0), Vector2(0, r + 7), Vector2(-r - 7, 0)]:
+				OrnateFrame.draw_gem(self, c + offset, 4.0, 0.95)
+
 	func _draw_icon(c: Vector2, r: float) -> void:
+		var tc = _type_color()
 		var col: Color
 		match state:
-			"current":    col = Color(0.95, 0.80, 1.00, 0.95)
-			"selectable": col = Color(0.95, 0.86, 0.50, 0.95)
-			"visited":    col = Color(0.42, 0.36, 0.58, 0.70)
-			_:            col = Color(0.26, 0.22, 0.36, 0.55)
+			"current":    col = Color(0.96, 0.86, 1.00, 0.95)
+			"selectable": col = Color(tc.lightened(0.42), 0.95)
+			"visited":    col = Color(0.42, 0.37, 0.56, 0.60)
+			_:            col = Color(0.27, 0.23, 0.37, 0.50)
 
-		var s = r * 0.50
-		match node_type:
-			"normal_battle": _icon_swords(c, s, col)
-			"elite_battle":  _icon_skull(c, s, col)
-			"rest":          _icon_flame(c, s, col)
-			"event":         _icon_question(c, s, col)
-			"treasure":      _icon_chest(c, s, col)
-			"boss":          _icon_crown(c, s, col)
-			"start":         _icon_sigil(c, s, col)
-			"starter_relic", "relic", "initial_relic", "relic_reward": _icon_sigil(c, s, col)
+		var tex = _get_icon_texture()
+		if tex:
+			var icon_size = r * 1.16
+			draw_texture_rect(tex, Rect2(c - Vector2(icon_size, icon_size) * 0.5, Vector2(icon_size, icon_size)), false, col)
 
-	func _icon_swords(c: Vector2, s: float, col: Color) -> void:
-		draw_line(c + Vector2(-s, -s), c + Vector2(s, s), col, 2.0)
-		draw_line(c + Vector2(-s * 0.4, -s * 0.4) + Vector2(-s * 0.45, s * 0.45),
-				  c + Vector2(-s * 0.4, -s * 0.4) + Vector2(s * 0.45, -s * 0.45), col, 1.8)
-		draw_line(c + Vector2(s, -s), c + Vector2(-s, s), col, 2.0)
-		draw_line(c + Vector2(s * 0.4, -s * 0.4) + Vector2(-s * 0.45, -s * 0.45),
-				  c + Vector2(s * 0.4, -s * 0.4) + Vector2(s * 0.45, s * 0.45), col, 1.8)
-
-	func _icon_skull(c: Vector2, s: float, col: Color) -> void:
-		draw_circle(c + Vector2(0, -s * 0.2), s * 0.85, col, false, 2.0)
-		draw_circle(c + Vector2(-s * 0.38, -s * 0.45), s * 0.22, col)
-		draw_circle(c + Vector2( s * 0.38, -s * 0.45), s * 0.22, col)
-		draw_line(c + Vector2(-s * 0.45, s * 0.55), c + Vector2(s * 0.45, s * 0.55), col, 2.0)
-		draw_line(c + Vector2(-s * 0.45, s * 0.55), c + Vector2(-s * 0.45, s * 0.9), col, 2.0)
-		draw_line(c + Vector2(s * 0.45, s * 0.55), c + Vector2(s * 0.45, s * 0.9), col, 2.0)
-
-	func _icon_flame(c: Vector2, s: float, col: Color) -> void:
-		var fc = Color(col.r, maxf(col.g - 0.3, 0.0), maxf(col.b - 0.5, 0.0), col.a)
-		draw_line(c + Vector2(-s, s * 0.8), c + Vector2(s, s * 0.8), col, 2.2)
-		draw_line(c + Vector2(-s * 0.6, s * 0.8), c + Vector2(0, s * 0.1), col, 1.8)
-		draw_line(c + Vector2(s * 0.6, s * 0.8), c + Vector2(0, s * 0.1), col, 1.8)
-		draw_line(c + Vector2(0, s * 0.5), c + Vector2(-s * 0.35, -s * 0.35), fc, 1.8)
-		draw_line(c + Vector2(0, s * 0.5), c + Vector2(s * 0.35, -s * 0.35), fc, 1.8)
-		draw_line(c + Vector2(-s * 0.35, -s * 0.35), c + Vector2(0, -s), fc, 1.4)
-		draw_line(c + Vector2(s * 0.35, -s * 0.35), c + Vector2(0, -s), fc, 1.4)
-
-	func _icon_question(c: Vector2, s: float, col: Color) -> void:
-		draw_line(c + Vector2(-s * 0.45, -s), c + Vector2(s * 0.45, -s), col, 2.0)
-		draw_line(c + Vector2(s * 0.45, -s), c + Vector2(s * 0.45, -s * 0.15), col, 2.0)
-		draw_line(c + Vector2(s * 0.45, -s * 0.15), c + Vector2(0, s * 0.3), col, 2.0)
-		draw_line(c + Vector2(0, s * 0.3), c + Vector2(0, s * 0.62), col, 2.0)
-		draw_circle(c + Vector2(0, s * 0.92), s * 0.20, col)
-		draw_line(c + Vector2(-s * 0.45, -s), c + Vector2(-s * 0.45, -s * 0.6), col, 2.0)
-
-	func _icon_chest(c: Vector2, s: float, col: Color) -> void:
-		draw_rect(Rect2(c + Vector2(-s, s * 0.1), Vector2(s * 2, s * 0.85)), col, false, 2.0)
-		draw_line(c + Vector2(-s, -s * 0.25), c + Vector2(-s, s * 0.1), col, 2.0)
-		draw_line(c + Vector2(s, -s * 0.25), c + Vector2(s, s * 0.1), col, 2.0)
-		draw_line(c + Vector2(-s, -s * 0.25), c + Vector2(s, -s * 0.25), col, 2.0)
-		draw_line(c + Vector2(-s, s * 0.1), c + Vector2(s, s * 0.1), col, 2.0)
-		draw_circle(c + Vector2(0, s * 0.5), s * 0.24, col, false, 1.5)
-
-	func _icon_crown(c: Vector2, s: float, col: Color) -> void:
-		draw_line(c + Vector2(-s, s * 0.55), c + Vector2(s, s * 0.55), col, 2.5)
-		draw_line(c + Vector2(-s, s * 0.55), c + Vector2(-s, -s * 0.45), col, 2.0)
-		draw_line(c + Vector2(0, s * 0.55), c + Vector2(0, -s), col, 2.0)
-		draw_line(c + Vector2(s, s * 0.55), c + Vector2(s, -s * 0.45), col, 2.0)
-		draw_circle(c + Vector2(-s, -s * 0.45), s * 0.26, col)
-		draw_circle(c + Vector2(0, -s), s * 0.30, col)
-		draw_circle(c + Vector2(s, -s * 0.45), s * 0.26, col)
-
-	func _icon_sigil(c: Vector2, s: float, col: Color) -> void:
-		draw_circle(c, s * 1.0, col, false, 2.0)
-		draw_line(c + Vector2(0, -s), c + Vector2(0, s), col, 1.5)
-		draw_line(c + Vector2(-s, 0), c + Vector2(s, 0), col, 1.5)
-		draw_circle(c, s * 0.30, col)
+	func _get_icon_texture() -> Texture2D:
+		var icon_name: String = TYPE_META.get(node_type, {}).get("icon", "")
+		if icon_name.is_empty():
+			return null
+		if _icon_cache.has(icon_name):
+			return _icon_cache[icon_name]
+		var path = "res://assets/ui/icons/%s.svg" % icon_name
+		var tex: Texture2D = load(path) if ResourceLoader.exists(path) else null
+		_icon_cache[icon_name] = tex
+		return tex
