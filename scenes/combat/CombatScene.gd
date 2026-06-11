@@ -772,9 +772,17 @@ func _animate_card_flight(card_node: Control, card_data: Dictionary) -> void:
 		"defense": Color(0.38, 0.58, 0.95),
 	}.get(card_data.get("type", ""), Color(0.36, 0.80, 0.78))
 
-	# 行き先: 攻撃は敵へ、それ以外は自分へ
+	# 行き先: 敵を対象とする効果(ダメージ・敵へのデバフ)を含むなら敵へ、それ以外は自分へ
+	var targets_enemy = false
+	for effect in card_data.get("effects", []):
+		match effect.get("type", ""):
+			"damage", "damage_multi", "conditional_damage", "vulnerable_bonus_damage":
+				targets_enemy = true
+			"apply_status":
+				if effect.get("target", "enemy") == "enemy":
+					targets_enemy = true
 	var target_point: Vector2
-	if is_attack and _enemy_node:
+	if targets_enemy and _enemy_node:
 		target_point = _enemy_node.position + Vector2(0, -90)
 	elif _player_silhouette:
 		target_point = _player_silhouette.position + Vector2(0, -40)
