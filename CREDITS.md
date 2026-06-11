@@ -1,5 +1,10 @@
 # Credits
 
+## Font
+
+"Shippori Mincho" by FONTDASU (https://fontdasu.com),
+licensed under the SIL Open Font License 1.1 (see `assets/fonts/OFL.txt`).
+
 ## Card icons
 
 Card art icons are from [game-icons.net](https://game-icons.net), licensed under

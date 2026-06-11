@@ -30,6 +30,10 @@ UIFx="*res://autoload/UIFx.gd"
 ScreenFx="*res://autoload/ScreenFx.gd"
 PauseOverlay="*res://autoload/PauseOverlay.gd"
 
+[gui]
+
+theme/custom_font="res://assets/fonts/ShipporiMincho-Regular.ttf"
+
 [display]
 
 window/size/viewport_width=2560

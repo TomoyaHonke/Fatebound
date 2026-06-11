@@ -11,8 +11,13 @@ var master_volume: float = 0.8
 var bgm_volume: float = 0.8
 var sfx_volume: float = 0.8
 var fullscreen: bool = false
+var tutorial_seen: bool = false
 
 func _ready() -> void:
+	# draw_string系(ThemeDB.fallback_font参照)にもテーマと同じフォントを使わせる
+	var game_font = load("res://assets/fonts/ShipporiMincho-Regular.ttf")
+	if game_font:
+		ThemeDB.fallback_font = game_font
 	_ensure_buses()
 	_load()
 	apply_all()
@@ -35,6 +40,10 @@ func set_sfx_volume(value: float) -> void:
 func set_fullscreen(enabled: bool) -> void:
 	fullscreen = enabled
 	_apply_fullscreen()
+	_save()
+
+func mark_tutorial_seen() -> void:
+	tutorial_seen = true
 	_save()
 
 func apply_all() -> void:
@@ -82,6 +91,7 @@ func _save() -> void:
 		"bgm_volume": bgm_volume,
 		"sfx_volume": sfx_volume,
 		"fullscreen": fullscreen,
+		"tutorial_seen": tutorial_seen,
 	}))
 	f.close()
 
@@ -99,3 +109,4 @@ func _load() -> void:
 	bgm_volume = clampf(float(data.get("bgm_volume", bgm_volume)), 0.0, 1.0)
 	sfx_volume = clampf(float(data.get("sfx_volume", sfx_volume)), 0.0, 1.0)
 	fullscreen = bool(data.get("fullscreen", fullscreen))
+	tutorial_seen = bool(data.get("tutorial_seen", tutorial_seen))

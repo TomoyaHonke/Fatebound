@@ -18,6 +18,7 @@ var _scroll_content: VBoxContainer
 var _grid: GridContainer
 var _empty_label: Label
 var _card_scene: PackedScene
+var _title_label: Label
 
 
 func _ready() -> void:
@@ -34,7 +35,9 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
-func show_deck(card_ids: Array) -> void:
+func show_deck(card_ids: Array, title_text: String = "デッキ") -> void:
+	if _title_label:
+		_title_label.text = title_text
 	_populate(card_ids)
 	show()
 	call_deferred("_reset_scroll_top")
@@ -75,16 +78,16 @@ func _build_ui() -> void:
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(panel)
 
-	var title = Label.new()
-	title.text = "デッキ"
-	title.position = Vector2(28, 20)
-	title.size = Vector2(320, 42)
-	title.add_theme_font_size_override("font_size", 30)
-	title.add_theme_color_override("font_color", C_GOLD)
-	title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.82))
-	title.add_theme_constant_override("shadow_offset_x", 2)
-	title.add_theme_constant_override("shadow_offset_y", 2)
-	panel.add_child(title)
+	_title_label = Label.new()
+	_title_label.text = "デッキ"
+	_title_label.position = Vector2(28, 20)
+	_title_label.size = Vector2(320, 42)
+	_title_label.add_theme_font_size_override("font_size", 30)
+	_title_label.add_theme_color_override("font_color", C_GOLD)
+	_title_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.82))
+	_title_label.add_theme_constant_override("shadow_offset_x", 2)
+	_title_label.add_theme_constant_override("shadow_offset_y", 2)
+	panel.add_child(_title_label)
 
 	var close_btn = _make_button("閉じる", Vector2(820, 40), Vector2(128, 42))
 	close_btn.pressed.connect(close)

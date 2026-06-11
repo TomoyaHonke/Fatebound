@@ -89,6 +89,8 @@ var _player_hud_panel: Panel
 var _energy_container: Control
 var _energy_orb:       Control
 var _energy_label:     Label
+var _draw_pile_btn:    Button
+var _discard_pile_btn: Button
 var _log_label:       Label
 var _reward_screen:   Control
 var _end_screen:      Control
@@ -110,11 +112,58 @@ func _ready() -> void:
 	_build_relic_viewer()
 	_build_relic_reward()
 	_build_boss_relic_reward()
+	_maybe_show_tutorial()
+
+func _maybe_show_tutorial() -> void:
+	if GameSettings.tutorial_seen:
+		return
+	var tutorial = preload("res://scenes/ui/TutorialOverlay.gd").new()
+	tutorial.steps = [
+		{
+			"rect": Rect2(195, 492, 830, 205),
+			"text": "カードをクリックすると使用できます(数字キー1〜9でも可)。左上の数字がコストで、そのぶんエナジーを消費します。",
+			"panel_pos": Vector2(470, 300),
+		},
+		{
+			"rect": Rect2(10, 505, 176, 200),
+			"text": "エナジーは毎ターン全回復します。使い切ることを恐れずに。",
+			"panel_pos": Vector2(210, 480),
+		},
+		{
+			"rect": Rect2(ENEMY_INFO_AREA_POS, ENEMY_INFO_AREA_SIZE),
+			"text": "敵の「次」は次の行動の予告です。攻撃なら剣、防御なら盾。アイコンにカーソルを乗せると詳細が見られます。",
+			"panel_pos": Vector2(470, 130),
+		},
+		{
+			"rect": Rect2(1055, 548, 220, 100),
+			"text": "行動を終えたら「ターン終了」(Eキーでも可)。敵が行動し、次のターンで手札を引き直します。",
+			"panel_pos": Vector2(700, 560),
+		},
+	]
+	tutorial.finished.connect(GameSettings.mark_tutorial_seen)
+	add_child(tutorial)
 
 func _apply_screen_scale() -> void:
 	var scaler = get_node_or_null("/root/ScreenScale")
 	if scaler and scaler.has_method("apply"):
 		scaler.apply(self)
+
+func _unhandled_input(event: InputEvent) -> void:
+	# キーボード操作: 1〜9でカード使用、Eでターン終了
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return
+	if _busy or not _player_turn:
+		return
+	if _deck_viewer and _deck_viewer.visible:
+		return
+	if event.keycode == KEY_E:
+		_on_end_turn()
+		get_viewport().set_input_as_handled()
+	elif event.keycode >= KEY_1 and event.keycode <= KEY_9:
+		var index = event.keycode - KEY_1
+		if index < GameState.hand.size():
+			_on_card_played(index)
+			get_viewport().set_input_as_handled()
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  UI Construction
@@ -157,6 +206,7 @@ func _build_ui() -> void:
 
 	# Energy panel near the hand/action area
 	_build_energy_panel()
+	_build_pile_buttons()
 
 	# Log label (bottom-left)
 	_log_label = Label.new()
@@ -410,6 +460,32 @@ func _build_energy_panel() -> void:
 
 	_rebuild_energy_dots()
 
+func _build_pile_buttons() -> void:
+	# 山札(左下)と捨て札(右下)の枚数表示。クリックで中身を確認できる。
+	_draw_pile_btn = _make_button("山札 0", Vector2(94, 698), Vector2(150, 30))
+	_draw_pile_btn.add_theme_font_size_override("font_size", 13)
+	_draw_pile_btn.pressed.connect(func():
+		_deck_viewer.show_deck(_sorted_pile(GameState.draw_pile), "山札(順不同)"))
+	add_child(_draw_pile_btn)
+
+	_discard_pile_btn = _make_button("捨て札 0", Vector2(1155, 692), Vector2(150, 30))
+	_discard_pile_btn.add_theme_font_size_override("font_size", 13)
+	_discard_pile_btn.pressed.connect(func():
+		_deck_viewer.show_deck(_sorted_pile(GameState.discard), "捨て札"))
+	add_child(_discard_pile_btn)
+
+func _sorted_pile(pile: Array) -> Array:
+	var ids = pile.duplicate()
+	ids.sort_custom(func(a, b):
+		return GameState.get_card(a).get("name", "") < GameState.get_card(b).get("name", ""))
+	return ids
+
+func _update_pile_buttons() -> void:
+	if _draw_pile_btn:
+		_draw_pile_btn.text = "山札 %d" % GameState.draw_pile.size()
+	if _discard_pile_btn:
+		_discard_pile_btn.text = "捨て札 %d" % GameState.discard.size()
+
 func _rebuild_energy_dots() -> void:
 	if not _energy_container:
 		return
@@ -426,6 +502,7 @@ func _update_hud() -> void:
 	_update_player_status_badges()
 
 	_rebuild_energy_dots()
+	_update_pile_buttons()
 	_update_card_playability()
 
 func _update_player_status_badges() -> void:
