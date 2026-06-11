@@ -4,8 +4,21 @@ extends Node
 ## - black fade-in on every scene change (above PauseOverlay)
 
 const VIGNETTE_LAYER := 60
+const PULSE_LAYER := 70
 const FADE_LAYER := 95
 const FADE_IN_DURATION := 0.45
+
+const PULSE_SHADER_CODE := """
+shader_type canvas_item;
+uniform vec3 tint = vec3(0.78, 0.07, 0.05);
+uniform float strength = 0.0;
+void fragment() {
+	vec2 uv = UV - vec2(0.5);
+	float dist = length(uv * vec2(1.0, 1.18));
+	float v = smoothstep(0.30, 0.85, dist);
+	COLOR = vec4(tint, v * strength);
+}
+"""
 
 const VIGNETTE_SHADER_CODE := """
 shader_type canvas_item;
@@ -19,13 +32,45 @@ void fragment() {
 """
 
 var _fade_rect: ColorRect
+var _pulse_rect: ColorRect
 var _last_scene: Node = null
 var _fade_tween: Tween = null
+var _pulse_tween: Tween = null
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build_vignette()
+	_build_pulse()
 	_build_fade()
+
+## 画面の縁を一瞬だけ色付きで明滅させる(被弾の赤など)。
+func pulse_vignette(tint: Color = Color(0.78, 0.07, 0.05), strength: float = 0.5, duration: float = 0.4) -> void:
+	var mat: ShaderMaterial = _pulse_rect.material
+	mat.set_shader_parameter("tint", Vector3(tint.r, tint.g, tint.b))
+	if _pulse_tween:
+		_pulse_tween.kill()
+	var set_strength = func(v: float): mat.set_shader_parameter("strength", v)
+	_pulse_tween = create_tween()
+	_pulse_tween.tween_method(set_strength, 0.0, strength, 0.06)
+	_pulse_tween.tween_method(set_strength, strength, 0.0, duration) \
+		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+
+func _build_pulse() -> void:
+	var layer = CanvasLayer.new()
+	layer.name = "PulseLayer"
+	layer.layer = PULSE_LAYER
+	add_child(layer)
+
+	_pulse_rect = ColorRect.new()
+	_pulse_rect.name = "PulseVignette"
+	_pulse_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_pulse_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var shader = Shader.new()
+	shader.code = PULSE_SHADER_CODE
+	var mat = ShaderMaterial.new()
+	mat.shader = shader
+	_pulse_rect.material = mat
+	layer.add_child(_pulse_rect)
 
 func _build_vignette() -> void:
 	var layer = CanvasLayer.new()

@@ -338,6 +338,92 @@ class ImpactBurst extends Node2D:
 			draw_line(inner, outer, Color(color.lightened(0.25), fade * 0.80), 1.6)
 
 
+class AuraEffect extends Node2D:
+	## バフ・回復などで足元から立ち上る光の粒。色を設定して使う。再生後自動で消える。
+	const DURATION := 0.85
+
+	var color: Color = Color(1.0, 0.78, 0.28)
+	var _t: float = 0.0
+	var _motes: Array = []
+
+	func _ready() -> void:
+		z_index = 28
+		for i in 12:
+			_motes.append({
+				"x": randf_range(-46.0, 46.0),
+				"delay": randf_range(0.0, 0.35),
+				"speed": randf_range(0.8, 1.3),
+				"r": randf_range(2.0, 4.5),
+			})
+
+	func _process(delta: float) -> void:
+		_t += delta / DURATION
+		if _t >= 1.0:
+			queue_free()
+			return
+		queue_redraw()
+
+	func _draw() -> void:
+		var fade = 1.0 - _t
+		# 足元の光だまり
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.35))
+		draw_circle(Vector2.ZERO, 52.0, Color(color, 0.14 * fade))
+		draw_circle(Vector2.ZERO, 30.0, Color(color, 0.18 * fade))
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		# 立ち上る粒
+		for m in _motes:
+			var lt = clampf((_t - m["delay"]) / (1.0 - m["delay"]), 0.0, 1.0)
+			if lt <= 0.0:
+				continue
+			var pos = Vector2(m["x"] + sin(lt * 6.0 + m["x"]) * 6.0, -lt * 150.0 * m["speed"])
+			draw_circle(pos, m["r"] * (1.0 - lt * 0.5), Color(color.lightened(0.30), (1.0 - lt) * 0.85))
+
+
+class GlowMote extends Node2D:
+	## 飛んでいく光弾(呪い・お邪魔カード混入など)。位置は呼び出し側のTweenで動かす。
+	var color: Color = Color(0.70, 0.45, 1.0)
+
+	func _ready() -> void:
+		z_index = 28
+
+	func _process(_delta: float) -> void:
+		queue_redraw()
+
+	func _draw() -> void:
+		draw_circle(Vector2.ZERO, 14.0, Color(color, 0.18))
+		draw_circle(Vector2.ZERO, 8.0, Color(color, 0.40))
+		draw_circle(Vector2.ZERO, 4.0, Color(color.lightened(0.45), 0.95))
+
+
+class SlashFlash extends Node2D:
+	## 被弾時の白い斬撃閃光。再生後自動で消える。
+	const DURATION := 0.18
+
+	var _t: float = 0.0
+	var _angle: float = 0.0
+
+	func _ready() -> void:
+		z_index = 32
+		_angle = randf_range(-0.55, 0.20)
+
+	func _process(delta: float) -> void:
+		_t += delta / DURATION
+		if _t >= 1.0:
+			queue_free()
+			return
+		queue_redraw()
+
+	func _draw() -> void:
+		var fade = 1.0 - _t
+		var grow = 0.55 + _t * 0.85
+		var dir = Vector2(cos(_angle), sin(_angle))
+		draw_line(-dir * 92.0 * grow, dir * 92.0 * grow,
+			Color(1.0, 0.97, 0.92, 0.85 * fade), 1.0 + 5.0 * fade)
+		draw_line(-dir * 70.0 * grow, dir * 70.0 * grow,
+			Color(1.0, 0.58, 0.46, 0.50 * fade), 2.0)
+		draw_circle(Vector2.ZERO, 26.0 * fade, Color(1.0, 0.92, 0.86, 0.20 * fade))
+
+
 class FrameOverlay extends Control:
 	## 任意のControlの子に置くと、その矩形に装飾フレームを重ね描きする。
 	const OrnateFrame = preload("res://scenes/ui/OrnateFrame.gd")

@@ -1092,6 +1092,9 @@ func _do_enemy_turn() -> void:
 	# Tick enemy statuses
 	_enemy_node.tick_statuses()
 
+	# 行動名の宣言(頭上に短く表示)
+	_show_enemy_callout(action.get("desc", ""))
+
 	match action.get("type", ""):
 		"attack":
 			var raw = _enemy_node.get_attack_value(action.get("value", 5))
@@ -1101,6 +1104,7 @@ func _do_enemy_turn() -> void:
 			var raw = _enemy_node.get_attack_value(action.get("value", 5))
 			var buff = action.get("buff", 1)
 			_enemy_node.add_strength(buff)
+			_spawn_enemy_aura(Color(1.0, 0.78, 0.28))
 			_log("敵の強撃: %dダメージ。攻撃力上昇。" % raw)
 			_enemy_attack_animation(raw)
 		"attack_multi":
@@ -1114,6 +1118,7 @@ func _do_enemy_turn() -> void:
 			var amount = action.get("amount", 1)
 			var raw = _enemy_node.get_attack_value(action.get("value", 0))
 			GameState.add_temporary_card_to_discard_pile(card_id, amount)
+			_fly_curse_mote(Vector2(610, 600))
 			_log(action.get("log", "敵は攻撃し、おじゃまカードを捨て札に混ぜた。"))
 			_enemy_attack_animation(raw)
 			return
@@ -1122,6 +1127,7 @@ func _do_enemy_turn() -> void:
 			var amount = action.get("amount", 1)
 			var raw = _enemy_node.get_attack_value(action.get("value", 0))
 			GameState.apply_status(status, amount)
+			_spawn_enemy_aura(Color(0.70, 0.45, 1.0), true)
 			_log("敵の呪い。%sを%d受けた。" % [_status_name(status), amount])
 			if raw > 0:
 				_enemy_attack_animation(raw)
@@ -1133,6 +1139,7 @@ func _do_enemy_turn() -> void:
 		"block":
 			var amount = action.get("value", 5)
 			_enemy_node.gain_block(amount)
+			_spawn_enemy_block_effect()
 			_log("敵は防御を固めた。ブロック%d。" % amount)
 			var t = create_tween()
 			t.tween_interval(0.8)
@@ -1140,6 +1147,7 @@ func _do_enemy_turn() -> void:
 		"strength":
 			var buff = action.get("buff", 1)
 			_enemy_node.add_strength(buff)
+			_spawn_enemy_aura(Color(1.0, 0.78, 0.28))
 			_log("敵の力が増した。攻撃力+%d。" % buff)
 			var t = create_tween()
 			t.tween_interval(0.8)
@@ -1149,6 +1157,8 @@ func _do_enemy_turn() -> void:
 			var buff = action.get("buff", 1)
 			_enemy_node.gain_block(block_amount)
 			_enemy_node.add_strength(buff)
+			_spawn_enemy_block_effect()
+			_spawn_enemy_aura(Color(1.0, 0.78, 0.28))
 			_log(action.get("log", "敵は防御を固め、攻撃力を上げた。"))
 			var t = create_tween()
 			t.tween_interval(0.8)
@@ -1156,6 +1166,7 @@ func _do_enemy_turn() -> void:
 		"heal":
 			var amount = action.get("value", 1)
 			_enemy_node.heal(amount)
+			_spawn_enemy_aura(Color(0.42, 0.90, 0.50))
 			_log("敵はHPを%d回復した。" % amount)
 			var t = create_tween()
 			t.tween_interval(0.8)
@@ -1165,6 +1176,8 @@ func _do_enemy_turn() -> void:
 			var buff = action.get("buff", 1)
 			_enemy_node.heal(amount)
 			_enemy_node.add_strength(buff)
+			_spawn_enemy_aura(Color(0.42, 0.90, 0.50))
+			_spawn_enemy_aura(Color(1.0, 0.78, 0.28))
 			_log(action.get("log", "敵は回復し、攻撃力を上げた。"))
 			var t = create_tween()
 			t.tween_interval(0.8)
@@ -1173,6 +1186,7 @@ func _do_enemy_turn() -> void:
 			var status = action.get("status", "weak")
 			var amount = action.get("amount", 1)
 			GameState.apply_status(status, amount)
+			_spawn_enemy_aura(Color(0.70, 0.45, 1.0), true)
 			_log("敵の呪い。%sを%d受けた。" % [_status_name(status), amount])
 			var t = create_tween()
 			t.tween_interval(0.8)
@@ -1181,6 +1195,7 @@ func _do_enemy_turn() -> void:
 			var card_id = action.get("card_id", "")
 			var amount = action.get("amount", 1)
 			GameState.add_temporary_card_to_draw_pile(card_id, amount)
+			_fly_curse_mote(Vector2(610, 600))
 			_log(action.get("log", "敵はおじゃまカードを山札に混ぜた。"))
 			var t = create_tween()
 			t.tween_interval(0.8)
@@ -1189,6 +1204,7 @@ func _do_enemy_turn() -> void:
 			var card_id = action.get("card_id", "")
 			var amount = action.get("amount", 1)
 			GameState.add_temporary_card_to_discard_pile(card_id, amount)
+			_fly_curse_mote(Vector2(610, 600))
 			_log(action.get("log", "敵はおじゃまカードを捨て札に混ぜた。"))
 			var t = create_tween()
 			t.tween_interval(0.8)
@@ -1198,6 +1214,7 @@ func _do_enemy_turn() -> void:
 				GameState.add_temporary_card_to_draw_pile(item.get("id", ""), item.get("amount", 1))
 			for item in action.get("discard", []):
 				GameState.add_temporary_card_to_discard_pile(item.get("id", ""), item.get("amount", 1))
+			_fly_curse_mote(Vector2(610, 600))
 			_log(action.get("log", "敵は複数のおじゃまカードを混ぜた。"))
 			var t = create_tween()
 			t.tween_interval(0.8)
@@ -1206,36 +1223,131 @@ func _do_enemy_turn() -> void:
 			_end_enemy_turn()
 
 func _enemy_attack_animation(damage: int) -> void:
-	# Enemy lunges left then returns
+	# ①溜め(後退+沈み) → ②踏み込み → ③命中(閃光+シェイク+赤明滅) → 戻り
 	var start_x = _enemy_node.position.x
-	var t = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
-	t.tween_property(_enemy_node, "position:x", start_x - 100, 0.18)
+	var t = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	t.tween_property(_enemy_node, "position:x", start_x + 26, 0.18)
+	t.parallel().tween_property(_enemy_node, "modulate", Color(0.55, 0.50, 0.62), 0.18)
+	t.tween_interval(0.06)
+	t.tween_property(_enemy_node, "position:x", start_x - 96, 0.13) \
+		.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
+	t.parallel().tween_property(_enemy_node, "modulate", Color.WHITE, 0.10)
 	t.tween_callback(func():
+		_play_attack_impact()
 		_damage_player_with_effect(damage)
 		if GameState.player_hp <= 0:
 			_on_player_died()
-			return
 	)
-	t.tween_property(_enemy_node, "position:x", start_x, 0.25)
-	t.tween_interval(0.3)
-	t.tween_callback(_end_enemy_turn)
+	t.tween_property(_enemy_node, "position:x", start_x, 0.24)
+	t.tween_interval(0.25)
+	t.tween_callback(func():
+		if GameState.player_hp > 0:
+			_end_enemy_turn()
+	)
 
 func _enemy_multi_attack_animation(damage: int, times: int) -> void:
+	# 溜めは1回、踏み込み+命中をヒット数ぶん連発する
 	var start_x = _enemy_node.position.x
-	var t = create_tween().set_ease(Tween.EASE_OUT)
+	var t = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	t.tween_property(_enemy_node, "position:x", start_x + 26, 0.16)
+	t.parallel().tween_property(_enemy_node, "modulate", Color(0.55, 0.50, 0.62), 0.16)
+	t.tween_property(_enemy_node, "modulate", Color.WHITE, 0.08)
 	for i in times:
-		t.tween_property(_enemy_node, "position:x", start_x - 80, 0.14)
+		t.tween_property(_enemy_node, "position:x", start_x - 80, 0.12) \
+			.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
 		t.tween_callback(func():
+			_play_attack_impact(5.0, 0.32)
 			_damage_player_with_effect(damage, Vector2(0, -154 - randf_range(0, 30)))
 		)
-		t.tween_property(_enemy_node, "position:x", start_x, 0.16)
-		t.tween_interval(0.1)
-	t.tween_interval(0.3)
+		t.tween_property(_enemy_node, "position:x", start_x - 30, 0.14)
+		t.tween_interval(0.05)
+	t.tween_property(_enemy_node, "position:x", start_x, 0.20)
+	t.tween_interval(0.25)
 	t.tween_callback(func():
 		if GameState.player_hp <= 0:
 			_on_player_died()
 		else:
 			_end_enemy_turn()
+	)
+
+func _play_attack_impact(shake_strength: float = 7.0, vignette_strength: float = 0.45) -> void:
+	if _player_silhouette:
+		var slash = CombatVisuals.SlashFlash.new()
+		slash.position = _player_silhouette.position + Vector2(0, -30)
+		_battle_layer.add_child(slash)
+	_shake_battle_layer(shake_strength)
+	ScreenFx.pulse_vignette(Color(0.78, 0.07, 0.05), vignette_strength, 0.40)
+
+func _show_enemy_callout(text: String) -> void:
+	if text.is_empty() or not _enemy_node:
+		return
+	var lbl = Label.new()
+	lbl.text = text
+	lbl.size = Vector2(280, 30)
+	lbl.position = _enemy_node.position + Vector2(-140, -292)
+	lbl.pivot_offset = Vector2(140, 15)
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_size_override("font_size", 21)
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.82, 0.42))
+	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.92))
+	lbl.add_theme_constant_override("shadow_offset_x", 2)
+	lbl.add_theme_constant_override("shadow_offset_y", 2)
+	lbl.modulate.a = 0.0
+	lbl.scale = Vector2(0.8, 0.8)
+	_battle_layer.add_child(lbl)
+	var t = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	t.tween_property(lbl, "modulate:a", 1.0, 0.12)
+	t.parallel().tween_property(lbl, "scale", Vector2.ONE, 0.14)
+	t.tween_interval(0.55)
+	t.tween_property(lbl, "modulate:a", 0.0, 0.22)
+	t.parallel().tween_property(lbl, "position:y", lbl.position.y - 16.0, 0.22)
+	t.tween_callback(lbl.queue_free)
+
+func _spawn_enemy_aura(color: Color, target_player: bool = false) -> void:
+	var aura = CombatVisuals.AuraEffect.new()
+	aura.color = color
+	if target_player and _player_silhouette:
+		aura.position = _player_silhouette.position + Vector2(0, 120)
+	elif _enemy_node:
+		aura.position = _enemy_node.position + Vector2(0, 110)
+	else:
+		return
+	_battle_layer.add_child(aura)
+
+func _spawn_enemy_block_effect() -> void:
+	if not _enemy_node:
+		return
+	var effect = CombatVisuals.BlockShieldEffect.new()
+	effect.position = _enemy_node.position + Vector2(0, -40)
+	effect.scale = Vector2(0.78, 0.78)
+	effect.modulate.a = 0.0
+	_battle_layer.add_child(effect)
+	var t = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	t.tween_property(effect, "modulate:a", 0.58, 0.08)
+	t.parallel().tween_property(effect, "scale", Vector2(1.02, 1.02), 0.18)
+	t.tween_property(effect, "modulate:a", 0.0, 0.28)
+	t.tween_callback(effect.queue_free)
+
+func _fly_curse_mote(target_point: Vector2) -> void:
+	# 紫の光弾が敵からプレイヤーの手札方向へ飛ぶ(お邪魔カード混入の可視化)
+	if not _enemy_node:
+		return
+	var mote = CombatVisuals.GlowMote.new()
+	var start = _enemy_node.position + Vector2(0, -60)
+	mote.position = start
+	_battle_layer.add_child(mote)
+	var ctrl = (start + target_point) * 0.5 + Vector2(randf_range(-60.0, 60.0), -90.0)
+	var t = create_tween()
+	t.tween_method(func(s: float):
+		if is_instance_valid(mote):
+			mote.position = start.lerp(ctrl, s).lerp(ctrl.lerp(target_point, s), s)
+	, 0.0, 1.0, 0.34).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+	t.tween_callback(func():
+		var burst = CombatVisuals.ImpactBurst.new()
+		burst.color = Color(0.70, 0.45, 1.0)
+		burst.position = target_point
+		_battle_layer.add_child(burst)
+		mote.queue_free()
 	)
 
 func _end_enemy_turn() -> void:
@@ -1346,7 +1458,7 @@ func _play_player_damage_feedback(actual_damage: int, number_offset: Vector2 = V
 	if _player_silhouette:
 		_player_silhouette.take_hit()
 	if actual_damage >= 0:
-		var number_pos = (_player_silhouette.global_position if _player_silhouette else Vector2(290, 334)) + number_offset
+		var number_pos = (_player_silhouette.position if _player_silhouette else Vector2(290, 334)) + number_offset
 		_show_damage_number(actual_damage, number_pos, Color(1.0, 0.25, 0.25))
 	_update_hud()
 
