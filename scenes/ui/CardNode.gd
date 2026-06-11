@@ -55,6 +55,15 @@ static var _icon_cache: Dictionary = {}
 
 const OrnateFrame = preload("res://scenes/ui/OrnateFrame.gd")
 
+# ── Keyword glossary (side panel shown while hovering) ────────────────────────
+const KEYWORD_GLOSSARY = [
+	["脆弱", "受けるダメージが1.5倍になる。"],
+	["脱力", "与えるダメージが25%下がる。"],
+	["毒", "ターン終了時にHPを失う。"],
+	["筋力", "攻撃カードのダメージが増加する。"],
+	["ブロック", "次に受けるダメージを軽減する。"],
+]
+
 var card_data: Dictionary = {}
 var card_index: int = 0
 var playable: bool = true
@@ -66,6 +75,8 @@ var _base_y: float = 0.0
 var _base_scale: Vector2 = Vector2.ONE
 var _target_y: float = 0.0
 var _hover_tween: Tween = null
+var _glossary_panel: Control = null
+var _glossary_built: bool = false
 
 func setup(data: Dictionary, index: int, can_play: bool, display_only_mode: bool = false, count: int = 1) -> void:
 	card_data = data
@@ -529,13 +540,90 @@ func _on_mouse_entered() -> void:
 	if display_only or not playable:
 		return
 	_hovered = true
+	z_index = 20
 	_animate_hover(true)
+	_show_glossary()
 	queue_redraw()
 
 func _on_mouse_exited() -> void:
 	_hovered = false
+	z_index = 0
 	_animate_hover(false)
+	if _glossary_panel:
+		_glossary_panel.visible = false
 	queue_redraw()
+
+func _show_glossary() -> void:
+	if not _glossary_built:
+		_glossary_built = true
+		var entries = _keywords_in_description()
+		if not entries.is_empty():
+			_build_glossary(entries)
+	if not _glossary_panel:
+		return
+	_glossary_panel.visible = true
+	# PanelContainerのサイズ確定を1フレーム待ってから位置決めする
+	await get_tree().process_frame
+	if not _hovered or not is_instance_valid(_glossary_panel):
+		return
+	_position_glossary()
+
+func _keywords_in_description() -> Array:
+	var desc: String = card_data.get("description", "")
+	var found: Array = []
+	for entry in KEYWORD_GLOSSARY:
+		if desc.contains(entry[0]):
+			found.append(entry)
+	return found
+
+func _build_glossary(entries: Array) -> void:
+	_glossary_panel = PanelContainer.new()
+	_glossary_panel.visible = false
+	_glossary_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_glossary_panel.custom_minimum_size = Vector2(186, 0)
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.030, 0.026, 0.060, 0.94)
+	style.border_color = Color(0.58, 0.42, 0.84, 0.70)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(6)
+	style.set_content_margin_all(9)
+	_glossary_panel.add_theme_stylebox_override("panel", style)
+
+	var box = VBoxContainer.new()
+	box.add_theme_constant_override("separation", 7)
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_glossary_panel.add_child(box)
+	for entry in entries:
+		var title = Label.new()
+		title.text = entry[0]
+		title.add_theme_font_size_override("font_size", 12)
+		title.add_theme_color_override("font_color", Color(0.92, 0.80, 0.50))
+		title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+		title.add_theme_constant_override("shadow_offset_x", 1)
+		title.add_theme_constant_override("shadow_offset_y", 1)
+		box.add_child(title)
+		var desc = Label.new()
+		desc.text = entry[1]
+		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		desc.custom_minimum_size = Vector2(168, 0)
+		desc.add_theme_font_size_override("font_size", 11)
+		desc.add_theme_color_override("font_color", Color(0.86, 0.84, 0.94))
+		desc.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.80))
+		desc.add_theme_constant_override("shadow_offset_x", 1)
+		desc.add_theme_constant_override("shadow_offset_y", 1)
+		box.add_child(desc)
+	add_child(_glossary_panel)
+
+func _position_glossary() -> void:
+	# 画面右端に収まらない場合はカードの左側に出す
+	var ui_scale = get_global_transform().get_scale().x
+	var panel_w = _glossary_panel.size.x
+	var viewport_w = get_viewport_rect().size.x
+	var right_edge = global_position.x + (CARD_W + 12.0 + panel_w) * ui_scale
+	if right_edge > viewport_w - 8.0:
+		_glossary_panel.position = Vector2(-panel_w - 12.0, 0.0)
+	else:
+		_glossary_panel.position = Vector2(CARD_W + 12.0, 0.0)
 
 func _animate_hover(is_hovering: bool) -> void:
 	if _hover_tween:
