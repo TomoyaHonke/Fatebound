@@ -1287,29 +1287,46 @@ func _play_attack_impact(shake_strength: float = 7.0, vignette_strength: float =
 	ScreenFx.pulse_vignette(Color(0.78, 0.07, 0.05), vignette_strength, 0.40)
 
 func _show_enemy_callout(text: String) -> void:
-	if text.is_empty() or not _enemy_node:
+	# 戦場中央(上部バーとキャラクターの間)のバナーで行動名を宣言する
+	if text.is_empty():
 		return
+	var banner = Control.new()
+	banner.position = Vector2(640 - 220, 148)
+	banner.size = Vector2(440, 34)
+	banner.pivot_offset = Vector2(220, 17)
+	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_battle_layer.add_child(banner)
+
 	var lbl = Label.new()
 	lbl.text = text
-	lbl.size = Vector2(280, 30)
-	lbl.position = _enemy_node.position + Vector2(-140, -292)
-	lbl.pivot_offset = Vector2(140, 15)
+	lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl.add_theme_font_size_override("font_size", 21)
-	lbl.add_theme_color_override("font_color", Color(1.0, 0.82, 0.42))
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_size_override("font_size", 24)
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.84, 0.46))
 	lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.92))
 	lbl.add_theme_constant_override("shadow_offset_x", 2)
 	lbl.add_theme_constant_override("shadow_offset_y", 2)
-	lbl.modulate.a = 0.0
-	lbl.scale = Vector2(0.8, 0.8)
-	_battle_layer.add_child(lbl)
+	banner.add_child(lbl)
+
+	# 左右の飾り罫
+	for side_x in [28.0, 322.0]:
+		var line = ColorRect.new()
+		line.color = Color(0.88, 0.74, 0.44, 0.55)
+		line.position = Vector2(side_x, 16.5)
+		line.size = Vector2(90, 1.5)
+		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		banner.add_child(line)
+
+	banner.modulate.a = 0.0
+	banner.scale = Vector2(0.85, 0.85)
 	var t = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
-	t.tween_property(lbl, "modulate:a", 1.0, 0.12)
-	t.parallel().tween_property(lbl, "scale", Vector2.ONE, 0.14)
-	t.tween_interval(0.55)
-	t.tween_property(lbl, "modulate:a", 0.0, 0.22)
-	t.parallel().tween_property(lbl, "position:y", lbl.position.y - 16.0, 0.22)
-	t.tween_callback(lbl.queue_free)
+	t.tween_property(banner, "modulate:a", 1.0, 0.12)
+	t.parallel().tween_property(banner, "scale", Vector2.ONE, 0.14)
+	t.tween_interval(0.60)
+	t.tween_property(banner, "modulate:a", 0.0, 0.22)
+	t.parallel().tween_property(banner, "position:y", banner.position.y - 16.0, 0.22)
+	t.tween_callback(banner.queue_free)
 
 func _spawn_enemy_aura(color: Color, target_player: bool = false) -> void:
 	var aura = CombatVisuals.AuraEffect.new()
