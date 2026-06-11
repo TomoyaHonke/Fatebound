@@ -200,9 +200,6 @@ func _make_button(text: String) -> Button:
 	btn.add_theme_stylebox_override("pressed", style_hover)
 	btn.add_theme_stylebox_override("focus", style_hover)
 
-	btn.mouse_entered.connect(func(): _tween_button_scale(btn, Vector2(1.03, 1.03)))
-	btn.mouse_exited.connect(func(): _tween_button_scale(btn, Vector2.ONE))
-
 	return btn
 
 func _animate_entrance() -> void:
@@ -267,11 +264,6 @@ func _on_settings() -> void:
 
 func _on_quit() -> void:
 	get_tree().quit()
-
-func _tween_button_scale(btn: Button, target_scale: Vector2) -> void:
-	btn.pivot_offset = btn.size / 2.0
-	var t = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
-	t.tween_property(btn, "scale", target_scale, 0.12)
 
 func _build_story_layer() -> void:
 	_story_layer = Control.new()
