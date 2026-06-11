@@ -16,7 +16,10 @@ UI icons in `assets/ui/icons/`:
 deck (quoting/card-pickup), relic (lorc/gem-pendant),
 attack (lorc/crossed-swords), shield (sbed/shield), strength (lorc/mailed-fist),
 vulnerable (lorc/broken-shield), weak (lorc/sword-break), poison (sbed/water-drop),
-heal (zeromancer/heart-plus), cards (faithtoken/card-draw).
+heal (zeromancer/heart-plus), cards (faithtoken/card-draw),
+node_elite (lorc/crowned-skull), node_boss (sbed/death-skull),
+node_rest (lorc/campfire), node_event (lorc/uncertainty),
+node_treasure (lorc/locked-chest).
 
 Icons were recolored and composited into the game's card frames; the underlying
 artwork is unmodified. Source icon for each card:
