@@ -52,9 +52,9 @@ const BUTTON_CENTER = Vector2(1168, 598)
 const BUTTON_SIZE = Vector2(196, 72)
 const BOTTOM_UI_TOP_Y = 488.0
 const PLAYER_STATUS_OFFSET = Vector2(12, 82)
-const ENERGY_PANEL_POS = Vector2(18, 534)
-const ENERGY_PANEL_SIZE = Vector2(168, 86)
-const ENERGY_ORB_SIZE = Vector2(64, 64)
+const ENERGY_PANEL_POS = Vector2(10, 514)
+const ENERGY_PANEL_SIZE = Vector2(168, 180)
+const ENERGY_ORB_SIZE = Vector2(76, 102)  # 上76x76がオーブ、下にピップ列
 const ENEMY_INFO_AREA_POS = Vector2(458, 34)
 const ENEMY_INFO_AREA_SIZE = Vector2(724, 70)
 const ENEMY_INFO_CARD_SIZE = Vector2(260, 56)
@@ -353,24 +353,19 @@ func _build_energy_panel() -> void:
 	var panel = Panel.new()
 	panel.position = ENERGY_PANEL_POS
 	panel.size = ENERGY_PANEL_SIZE
-	var panel_style = StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.026, 0.020, 0.056, 0.92)
-	panel_style.border_color = Color(0.38, 0.26, 0.58, 0.50)
-	panel_style.set_border_width_all(1)
-	panel_style.set_corner_radius_all(9)
-	panel.add_theme_stylebox_override("panel", panel_style)
+	panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	add_child(panel)
 	_energy_container = panel
 
 	_energy_orb = CombatVisuals.EnergyOrb.new()
-	_energy_orb.position = Vector2((ENERGY_PANEL_SIZE.x - ENERGY_ORB_SIZE.x) / 2.0, 28.0)
+	_energy_orb.position = Vector2((ENERGY_PANEL_SIZE.x - ENERGY_ORB_SIZE.x) / 2.0, 34.0)
 	_energy_orb.size = ENERGY_ORB_SIZE
 	_energy_orb.custom_minimum_size = ENERGY_ORB_SIZE
 	panel.add_child(_energy_orb)
 
 	var title_label = Label.new()
 	title_label.text = "エナジー"
-	title_label.position = Vector2(0, 3)
+	title_label.position = Vector2(0, 6)
 	title_label.size = Vector2(ENERGY_PANEL_SIZE.x, 22)
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_label.add_theme_font_size_override("font_size", 14)
@@ -382,7 +377,7 @@ func _build_energy_panel() -> void:
 
 	_energy_label = Label.new()
 	_energy_label.position = _energy_orb.position
-	_energy_label.size = ENERGY_ORB_SIZE
+	_energy_label.size = Vector2(ENERGY_ORB_SIZE.x, ENERGY_ORB_SIZE.x)
 	_energy_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_energy_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_energy_label.add_theme_font_size_override("font_size", 21)
@@ -1310,29 +1305,29 @@ func _make_button(text: String, position: Vector2, size: Vector2) -> Button:
 	btn.add_theme_color_override("font_color", Color(0.94, 0.88, 1.0))
 
 	var style_n = StyleBoxFlat.new()
-	style_n.bg_color = Color(0.12, 0.04, 0.26)
-	style_n.border_color = Color(0.55, 0.26, 0.86)
-	style_n.set_border_width_all(2)
-	style_n.set_corner_radius_all(10)
-	style_n.shadow_color = Color(0.45, 0.15, 0.78, 0.32)
-	style_n.shadow_size = 6
+	style_n.bg_color = Color(0.085, 0.040, 0.175, 0.97)
+	style_n.border_color = Color(0.46, 0.26, 0.70, 0.62)
+	style_n.set_border_width_all(1)
+	style_n.set_corner_radius_all(5)
+	style_n.shadow_color = Color(0.40, 0.14, 0.72, 0.22)
+	style_n.shadow_size = 5
 	btn.add_theme_stylebox_override("normal", style_n)
 
 	var style_h = StyleBoxFlat.new()
-	style_h.bg_color = Color(0.22, 0.08, 0.48)
-	style_h.border_color = Color(0.78, 0.44, 1.0)
-	style_h.set_border_width_all(3)
-	style_h.set_corner_radius_all(10)
-	style_h.shadow_color = Color(0.60, 0.28, 0.95, 0.50)
-	style_h.shadow_size = 10
+	style_h.bg_color = Color(0.155, 0.070, 0.32, 0.98)
+	style_h.border_color = Color(0.74, 0.46, 0.98, 0.85)
+	style_h.set_border_width_all(1)
+	style_h.set_corner_radius_all(5)
+	style_h.shadow_color = Color(0.56, 0.24, 0.92, 0.40)
+	style_h.shadow_size = 9
 	btn.add_theme_stylebox_override("hover", style_h)
 	btn.add_theme_stylebox_override("pressed", style_h)
 
 	var style_d = StyleBoxFlat.new()
-	style_d.bg_color = Color(0.08, 0.06, 0.16)
-	style_d.border_color = Color(0.22, 0.16, 0.34)
+	style_d.bg_color = Color(0.055, 0.045, 0.115, 0.92)
+	style_d.border_color = Color(0.22, 0.16, 0.34, 0.50)
 	style_d.set_border_width_all(1)
-	style_d.set_corner_radius_all(10)
+	style_d.set_corner_radius_all(5)
 	btn.add_theme_stylebox_override("disabled", style_d)
 	return btn
 

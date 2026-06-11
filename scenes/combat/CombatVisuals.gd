@@ -3,6 +3,7 @@ extends RefCounted
 ## CombatScene からは CombatVisuals.AmbientBG.new() のように参照する。
 
 class AmbientBG extends Node2D:
+	const OrnateFrame = preload("res://scenes/ui/OrnateFrame.gd")
 	const DESIGN_SIZE := Vector2(1280, 720)
 
 	var _phase: float = 0.0
@@ -76,65 +77,41 @@ class AmbientBG extends Node2D:
 			_draw_fog_band(486 + i * 18, drift, 34, Color(0.15, 0.16, 0.22, 0.026))
 
 	func _draw_bottom_ui_band() -> void:
+		var top = 490.0
+
+		# Soft gradient strips easing the battlefield into the band
+		draw_rect(Rect2(0, top - 26, 1280, 26), Color(0.006, 0.005, 0.014, 0.30), true)
+		draw_rect(Rect2(0, top - 12, 1280, 12), Color(0.006, 0.005, 0.014, 0.55), true)
+
 		# Base fill layers — deep dark backdrop
-		draw_rect(Rect2(0, 488, 1280, 232), Color(0.005, 0.004, 0.012, 0.97), true)
-		draw_rect(Rect2(0, 502, 1280, 218), Color(0.016, 0.015, 0.036, 0.94), true)
+		draw_rect(Rect2(0, top, 1280, 720 - top), Color(0.008, 0.007, 0.018, 0.98), true)
+		draw_rect(Rect2(0, top + 5, 1280, 715 - top), Color(0.022, 0.019, 0.044, 0.94), true)
 
-		# Slanted transition polygon blending battlefield into UI
-		draw_colored_polygon(PackedVector2Array([
-			Vector2(0, 488), Vector2(1280, 470), Vector2(1280, 520), Vector2(0, 538),
-		]), Color(0.034, 0.028, 0.062, 0.90))
+		# Section tints: energy | hand | end-turn
+		draw_rect(Rect2(0, top, 188, 720 - top), Color(0.030, 0.022, 0.056, 0.40), true)
+		draw_rect(Rect2(1030, top, 250, 720 - top), Color(0.026, 0.018, 0.052, 0.40), true)
 
-		# Section tints (gentler)
-		draw_rect(Rect2(0, 502, 188, 218), Color(0.014, 0.012, 0.028, 0.38), true)    # energy
-		draw_rect(Rect2(1030, 502, 250, 218), Color(0.010, 0.008, 0.024, 0.38), true)  # end-turn
+		# ── Top trim — antique bronze edge ────────────────────────────────────────
+		draw_line(Vector2(0, top - 2), Vector2(1280, top - 2), Color(OrnateFrame.EDGE_DARK, 0.80), 2.0)
+		draw_line(Vector2(0, top), Vector2(1280, top), Color(OrnateFrame.BRONZE, 0.62), 1.8)
+		draw_line(Vector2(0, top + 2), Vector2(1280, top + 2), Color(OrnateFrame.BRONZE_BRIGHT, 0.20), 1.0)
+		draw_line(Vector2(0, top + 9), Vector2(1280, top + 9), Color(0.10, 0.08, 0.18, 0.45), 1.4)
+		# Center finial on the trim
+		OrnateFrame.draw_gem(self, Vector2(640, top), 5.0, 0.80)
 
-		# ── Top border — refined metallic edge ───────────────────────────────────
-		draw_line(Vector2(0, 491), Vector2(1280, 473), Color(0.58, 0.46, 0.20, 0.14), 3.0)
-		draw_line(Vector2(0, 488), Vector2(1280, 470), Color(0.86, 0.74, 0.42, 0.34), 1.2)
-		# Inner shadow line
-		draw_line(Vector2(0, 508), Vector2(1280, 490), Color(0.16, 0.14, 0.28, 0.36), 1.6)
+		# ── Inner frame line around the whole band ───────────────────────────────
+		var inner = Rect2(7, top + 7, 1266, 706 - top)
+		draw_rect(inner, Color(OrnateFrame.BRONZE, 0.16), false, 1.0)
+		for p in [inner.position, Vector2(inner.end.x, inner.position.y), inner.end, Vector2(inner.position.x, inner.end.y)]:
+			OrnateFrame.draw_corner(self, p, inner.get_center(), 12.0, 0.42)
 
-		# ── Section dividers (subtle) ─────────────────────────────────────────────
-		var ldx = 188.0  # energy | cards
-		var rdx = 1030.0  # cards | end-turn
-		# Left divider
-		draw_line(Vector2(ldx, 505), Vector2(ldx, 716), Color(0.44, 0.34, 0.60, 0.22), 1.0)
-		draw_line(Vector2(ldx + 2, 505), Vector2(ldx + 2, 716), Color(0.06, 0.04, 0.14, 0.20), 0.8)
-		draw_circle(Vector2(ldx + 1, 505), 3.0, Color(0.78, 0.64, 0.30, 0.38))
-		draw_circle(Vector2(ldx + 1, 610), 2.2, Color(0.66, 0.52, 0.24, 0.18))
-		draw_circle(Vector2(ldx + 1, 716), 3.0, Color(0.78, 0.64, 0.30, 0.30))
-		# Right divider
-		draw_line(Vector2(rdx, 505), Vector2(rdx, 716), Color(0.44, 0.34, 0.60, 0.22), 1.0)
-		draw_line(Vector2(rdx + 2, 505), Vector2(rdx + 2, 716), Color(0.06, 0.04, 0.14, 0.20), 0.8)
-		draw_circle(Vector2(rdx + 1, 505), 3.0, Color(0.78, 0.64, 0.30, 0.38))
-		draw_circle(Vector2(rdx + 1, 610), 2.2, Color(0.66, 0.52, 0.24, 0.18))
-		draw_circle(Vector2(rdx + 1, 716), 3.0, Color(0.78, 0.64, 0.30, 0.30))
-
-		# ── Corner decorations (restrained) ──────────────────────────────────────
-		var gold = Color(0.80, 0.68, 0.34, 0.38)
-		var gold_dim = Color(0.68, 0.56, 0.26, 0.22)
-		var cs = 14.0  # corner size
-		# Top-left
-		draw_line(Vector2(10, 492), Vector2(10 + cs, 492), gold, 1.4)
-		draw_line(Vector2(10, 492), Vector2(10, 492 + cs), gold, 1.4)
-		draw_circle(Vector2(10, 492), 2.5, gold)
-		# Top-right
-		draw_line(Vector2(1270, 474), Vector2(1270 - cs, 474), gold, 1.4)
-		draw_line(Vector2(1270, 474), Vector2(1270, 474 + cs), gold, 1.4)
-		draw_circle(Vector2(1270, 474), 2.5, gold)
-		# Bottom-left
-		draw_line(Vector2(10, 714), Vector2(10 + cs, 714), gold_dim, 1.2)
-		draw_line(Vector2(10, 714), Vector2(10, 714 - cs), gold_dim, 1.2)
-		draw_circle(Vector2(10, 714), 2.0, gold_dim)
-		# Bottom-right
-		draw_line(Vector2(1270, 714), Vector2(1270 - cs, 714), gold_dim, 1.2)
-		draw_line(Vector2(1270, 714), Vector2(1270, 714 - cs), gold_dim, 1.2)
-		draw_circle(Vector2(1270, 714), 2.0, gold_dim)
+		# ── Section dividers ──────────────────────────────────────────────────────
+		OrnateFrame.draw_divider(self, Vector2(188, top + 14), Vector2(188, 706), 0.75)
+		OrnateFrame.draw_divider(self, Vector2(1030, top + 14), Vector2(1030, 706), 0.75)
 
 		# ── Bottom edge ──────────────────────────────────────────────────────────
-		draw_rect(Rect2(0, 710, 1280, 10), Color(0.002, 0.002, 0.008, 0.40), true)
-		draw_line(Vector2(0, 710), Vector2(1280, 710), Color(0.38, 0.30, 0.50, 0.14), 1.0)
+		draw_rect(Rect2(0, 712, 1280, 8), Color(0.002, 0.002, 0.008, 0.45), true)
+		draw_line(Vector2(0, 712), Vector2(1280, 712), Color(OrnateFrame.BRONZE_DARK, 0.50), 1.0)
 
 		# ── Subtle texture bands in card hand area ───────────────────────────────
 		for i in 3:
@@ -268,18 +245,64 @@ class BlockShieldEffect extends Node2D:
 
 
 class EnergyOrb extends Control:
+	## 上部の正方形領域にオーブ、その下にエナジー残数のひし形ピップを描く。
+	const OrnateFrame = preload("res://scenes/ui/OrnateFrame.gd")
+
+	var _phase: float = 0.0
+
+	func _process(delta: float) -> void:
+		_phase += delta
+		queue_redraw()
+
 	func _draw() -> void:
-		var center = size / 2.0
-		var radius = minf(size.x, size.y) * 0.42
-		draw_circle(center, radius + 9.0, Color(0.58, 0.18, 0.96, 0.18))
-		draw_circle(center, radius + 4.0, Color(0.50, 0.12, 0.84, 0.34))
-		draw_circle(center, radius, Color(0.19, 0.10, 0.36, 0.98))
-		draw_circle(center + Vector2(-7, -8), radius * 0.42, Color(0.78, 0.54, 1.0, 0.20))
-		draw_circle(center, radius, Color(0.72, 0.34, 1.0, 0.86), false, 2.4)
-		draw_circle(center, radius - 6.0, Color(0.86, 0.68, 1.0, 0.22), false, 1.2)
+		var center = Vector2(size.x / 2.0, size.x / 2.0)
+		var radius = size.x * 0.40
+		var pulse = 0.5 + sin(_phase * 1.7) * 0.5
+
+		# Outer purple glow (breathing)
+		for i in range(4, 0, -1):
+			draw_circle(center, radius + 2.0 + i * 4.5,
+				Color(0.56, 0.20, 0.95, (0.030 + 0.022 * (4 - i)) * (0.75 + pulse * 0.45)))
+
+		# Orb body
+		draw_circle(center, radius, Color(0.15, 0.080, 0.30, 0.98))
+		draw_circle(center + Vector2(-radius * 0.26, -radius * 0.32), radius * 0.48, Color(0.62, 0.40, 0.95, 0.16))
+		draw_circle(center + Vector2(radius * 0.18, radius * 0.30), radius * 0.55, Color(0.04, 0.02, 0.10, 0.35))
+
+		# Bronze outer ring with tick marks
+		draw_circle(center, radius + 5.0, Color(OrnateFrame.BRONZE, 0.55), false, 1.4)
+		for i in 12:
+			var ang = TAU * i / 12.0
+			var dir = Vector2(cos(ang), sin(ang))
+			draw_line(center + dir * (radius + 3.0), center + dir * (radius + 7.0),
+				Color(OrnateFrame.BRONZE_BRIGHT, 0.42), 1.4)
+
+		# Inner purple rings
+		draw_circle(center, radius, Color(0.74, 0.38, 1.0, 0.88), false, 2.6)
+		draw_circle(center, radius - 5.0, Color(0.88, 0.70, 1.0, 0.16 + pulse * 0.08), false, 1.2)
+
+		_draw_energy_pips()
+
+	func _draw_energy_pips() -> void:
+		var max_e = GameState.player_max_energy
+		var cur_e = GameState.player_energy
+		if max_e <= 0 or max_e > 8:
+			return
+		var spacing = 16.0
+		var y = size.x + 12.0
+		var x0 = size.x / 2.0 - (max_e - 1) * spacing / 2.0
+		for i in max_e:
+			var pos = Vector2(x0 + i * spacing, y)
+			if i < cur_e:
+				draw_circle(pos, 7.0, Color(0.60, 0.26, 0.95, 0.22))
+				OrnateFrame.draw_gem(self, pos, 5.0, 1.0, Color(0.78, 0.50, 1.0))
+			else:
+				OrnateFrame.draw_gem(self, pos, 4.4, 0.40, Color(0.30, 0.24, 0.42))
 
 
 class ButtonOrnament extends Control:
+	const OrnateFrame = preload("res://scenes/ui/OrnateFrame.gd")
+
 	var btn_size: Vector2 = Vector2.ZERO
 
 	func _ready() -> void:
@@ -289,39 +312,26 @@ class ButtonOrnament extends Control:
 		if btn_size == Vector2.ZERO:
 			return
 		var w = btn_size.x
-		var h = btn_size.y
-		var gold = Color(0.86, 0.72, 0.34)
 		var glow_col = Color(0.60, 0.26, 0.94)
-		var cs = 18.0
 
 		# Outer purple glow rings
 		for i in range(4, 0, -1):
 			var pad = float(i) * 2.2
 			var sb = StyleBoxFlat.new()
 			sb.bg_color = Color(0, 0, 0, 0)
-			sb.border_color = Color(glow_col.r, glow_col.g, glow_col.b, 0.06 * float(i))
+			sb.border_color = Color(glow_col.r, glow_col.g, glow_col.b, 0.05 * float(i))
 			sb.set_border_width_all(1)
-			sb.set_corner_radius_all(12 + i * 2)
-			draw_style_box(sb, Rect2(-pad, -pad, w + pad * 2.0, h + pad * 2.0))
+			sb.set_corner_radius_all(8 + i * 2)
+			draw_style_box(sb, Rect2(-pad, -pad, w + pad * 2.0, btn_size.y + pad * 2.0))
 
-		# Gold corner L-shapes
-		var lw = 2.2
-		# Top-left
-		draw_line(Vector2(0, 0), Vector2(cs, 0), Color(gold, 0.88), lw)
-		draw_line(Vector2(0, 0), Vector2(0, cs), Color(gold, 0.88), lw)
-		draw_circle(Vector2(0, 0), 3.5, Color(gold, 0.86))
-		# Top-right
-		draw_line(Vector2(w, 0), Vector2(w - cs, 0), Color(gold, 0.88), lw)
-		draw_line(Vector2(w, 0), Vector2(w, cs), Color(gold, 0.88), lw)
-		draw_circle(Vector2(w, 0), 3.5, Color(gold, 0.86))
-		# Bottom-left
-		draw_line(Vector2(0, h), Vector2(cs, h), Color(gold, 0.76), lw)
-		draw_line(Vector2(0, h), Vector2(0, h - cs), Color(gold, 0.76), lw)
-		draw_circle(Vector2(0, h), 3.5, Color(gold, 0.74))
-		# Bottom-right
-		draw_line(Vector2(w, h), Vector2(w - cs, h), Color(gold, 0.76), lw)
-		draw_line(Vector2(w, h), Vector2(w, h - cs), Color(gold, 0.76), lw)
-		draw_circle(Vector2(w, h), 3.5, Color(gold, 0.74))
-		# Mid-edge accent dots
-		draw_circle(Vector2(w * 0.5, 0), 2.5, Color(gold, 0.38))
-		draw_circle(Vector2(w * 0.5, h), 2.5, Color(gold, 0.32))
+		# Antique bronze frame
+		OrnateFrame.draw_frame(self, Rect2(Vector2.ZERO, btn_size), 1.0, 14.0)
+
+		# Top crest — center gem flanked by short curved horns
+		var crest = Vector2(w * 0.5, 0)
+		draw_arc(crest + Vector2(-16, 0), 9.0, PI, PI * 1.55, 12, Color(OrnateFrame.BRONZE_BRIGHT, 0.66), 1.6)
+		draw_arc(crest + Vector2(16, 0), 9.0, PI * 1.45, TAU, 12, Color(OrnateFrame.BRONZE_BRIGHT, 0.66), 1.6)
+		draw_circle(crest + Vector2(0, -3), 7.5, Color(0.05, 0.03, 0.10, 0.85))
+		OrnateFrame.draw_gem(self, crest + Vector2(0, -3), 6.0, 1.0)
+		# Bottom small gem
+		OrnateFrame.draw_gem(self, Vector2(w * 0.5, btn_size.y), 4.0, 0.70)
