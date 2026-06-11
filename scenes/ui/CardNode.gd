@@ -48,6 +48,11 @@ const ICON_ALPHA_NORMAL     = 0.30
 const ICON_ALPHA_HOVER      = 0.42
 const ICON_ALPHA_UNPLAYABLE = 0.14
 
+# ── Per-card art icon (game-icons.net, CC BY 3.0 — see CREDITS.md) ────────────
+const ICON_DIR  = "res://assets/cards/icons/"
+const ICON_SIZE = 78.0
+static var _icon_cache: Dictionary = {}
+
 var card_data: Dictionary = {}
 var card_index: int = 0
 var playable: bool = true
@@ -383,6 +388,12 @@ func _draw_card_emblem(type_color: Color, is_hovered: bool) -> void:
 	else:
 		ea = ICON_ALPHA_NORMAL
 	var ic = Vector2(CARD_W * 0.5, (CARD_SEP1_Y + CARD_SEP2_Y) * 0.5)
+	var icon_tex = _get_card_icon()
+	if icon_tex:
+		var lt = type_color.lightened(0.30)
+		var rect = Rect2(ic - Vector2(ICON_SIZE, ICON_SIZE) * 0.5, Vector2(ICON_SIZE, ICON_SIZE))
+		draw_texture_rect(icon_tex, rect, false, Color(lt.r, lt.g, lt.b, ea))
+		return
 	match card_data.get("type", "skill"):
 		"attack": _draw_emblem_sword(ic, type_color, ea)
 		"defense": _draw_emblem_shield(ic, type_color, ea)
@@ -390,6 +401,17 @@ func _draw_card_emblem(type_color: Color, is_hovered: bool) -> void:
 		"status": _draw_emblem_rune(ic, type_color, ea)
 		"curse":  _draw_emblem_rune(ic, type_color, ea)
 		_:        _draw_emblem_rune(ic, type_color, ea)
+
+func _get_card_icon() -> Texture2D:
+	var id: String = card_data.get("id", "")
+	if id.is_empty():
+		return null
+	if _icon_cache.has(id):
+		return _icon_cache[id]
+	var path = ICON_DIR + id + ".svg"
+	var tex: Texture2D = load(path) if ResourceLoader.exists(path) else null
+	_icon_cache[id] = tex
+	return tex
 
 func _draw_emblem_sword(c: Vector2, tc: Color, ea: float) -> void:
 	var lt      = tc.lightened(0.20)

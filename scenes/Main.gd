@@ -126,6 +126,18 @@ func _build_ui() -> void:
 	_menu_container.modulate.a = 0.0
 	add_child(_menu_container)
 
+	var credit = Label.new()
+	credit.name = "IconCredit"
+	credit.text = "Card icons: Lorc, sbed / game-icons.net (CC BY 3.0)"
+	credit.add_theme_font_size_override("font_size", 10)
+	credit.add_theme_color_override("font_color", Color(0.62, 0.58, 0.52, 0.42))
+	credit.anchor_top = 1.0
+	credit.anchor_bottom = 1.0
+	credit.offset_left = 12.0
+	credit.offset_top = -24.0
+	credit.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(credit)
+
 	_continue_btn = _make_button("続きから")
 	_continue_btn.pressed.connect(_on_continue)
 	_continue_btn.visible = SaveManager.has_run_save()
