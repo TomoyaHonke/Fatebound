@@ -148,7 +148,7 @@ class _RelicDisplay extends Control:
 		var medallion = preload("res://scenes/ui/RelicMedallion.gd").new()
 		medallion.position = Vector2(PAD_X, (H - 68.0) / 2.0)
 		add_child(medallion)
-		medallion.setup(relic_data.get("id", ""), 68.0, false)
+		medallion.setup(relic_data.get("id", ""), 68.0, false, true)
 
 		var name_lbl = Label.new()
 		name_lbl.text = relic_data.get("name_jp", "")

@@ -78,9 +78,20 @@ var _hover_tween: Tween = null
 var _glossary_panel: Control = null
 var _glossary_built: bool = false
 
+# ── ホロ光沢スイープ(レア以上) ────────────────────────────────────────────────
+const SWEEP_PERIOD := 6.0
+const SWEEP_DURATION := 1.1
+var _sweep_phase: float = 0.0
+var _sweep_offset: float = 0.0
+var _sweep_was_active: bool = false
+var _rarity_level_cached: int = 0
+
 func setup(data: Dictionary, index: int, can_play: bool, display_only_mode: bool = false, count: int = 1) -> void:
 	card_data = data
 	card_index = index
+	_rarity_level_cached = _get_rarity_level()
+	_sweep_offset = randf() * SWEEP_PERIOD
+	set_process(_rarity_level_cached >= 1)
 	display_only = display_only_mode
 	playable = true if display_only else can_play
 	count_badge = maxi(1, count)
@@ -161,6 +172,16 @@ func _draw() -> void:
 	for gp in [Vector2(1, 1), Vector2(CARD_W - 1, 1), Vector2(CARD_W - 1, CARD_H - 1), Vector2(1, CARD_H - 1)]:
 		OrnateFrame.draw_gem(self, gp, 2.6, alpha * 0.80, gem_col)
 
+	# レア以上は四隅に装飾金具、エピックはさらに上端の冠飾り
+	if rarity_level >= 1:
+		var bracket = 9.0 if rarity_level == 1 else 13.0
+		var frame_center = Vector2(CARD_W * 0.5, CARD_H * 0.5)
+		for gp2 in [Vector2(1, 1), Vector2(CARD_W - 1, 1), Vector2(CARD_W - 1, CARD_H - 1), Vector2(1, CARD_H - 1)]:
+			OrnateFrame.draw_corner(self, gp2, frame_center, bracket, alpha * 0.85)
+	if rarity_level >= 2:
+		OrnateFrame.draw_gem(self, Vector2(CARD_W * 0.5 - 13, 1.5), 3.2, alpha * 0.90, gem_col)
+		OrnateFrame.draw_gem(self, Vector2(CARD_W * 0.5 + 13, 1.5), 3.2, alpha * 0.90, gem_col)
+
 	# ── Inner gold hairline border ────────────────────────────────────────────
 	_draw_round_rect(Rect2(5.5, 5.5, CARD_W - 11, CARD_H - 11), 5,
 		Color(COLOR_GOLD.lerp(rarity_color, 0.28), alpha * (0.28 + rarity_level * 0.08)), false, 0.8)
@@ -191,6 +212,9 @@ func _draw() -> void:
 
 	# ── Card emblem (type-specific background icon) ──────────────────────────
 	_draw_card_emblem(type_color, is_hovered)
+
+	# ── ホロ光沢スイープ(レア以上、数秒に一度アート部を光が横切る) ─────────────
+	_draw_holo_sweep(alpha)
 
 	# ── Cost gem ──────────────────────────────────────────────────────────────
 	var gem_glow = 0.16 + rarity_level * 0.08
@@ -425,6 +449,29 @@ func _draw_card_emblem(type_color: Color, is_hovered: bool) -> void:
 		"curse":  _draw_emblem_rune(ic, type_color, ea)
 		_:        _draw_emblem_rune(ic, type_color, ea)
 
+func _draw_holo_sweep(alpha: float) -> void:
+	if _rarity_level_cached < 1:
+		return
+	var t = fmod(_sweep_phase + _sweep_offset, SWEEP_PERIOD)
+	if t >= SWEEP_DURATION:
+		return
+	var p = t / SWEEP_DURATION
+	var art = Rect2(11.0, CARD_SEP1_Y + 5.0, CARD_W - 22.0, CARD_SEP2_Y - CARD_SEP1_Y - 10.0)
+	var slant = 24.0
+	var band_center = art.position.x - slant - 10.0 + (art.size.x + slant * 2.0 + 20.0) * p
+	var boost = 1.5 if _rarity_level_cached >= 2 else 1.0
+	var tint = Color(0.95, 0.85, 1.0) if _rarity_level_cached >= 2 else Color(1.0, 0.97, 0.92)
+	for stripe in [[-9.0, 0.05], [-4.5, 0.10], [0.0, 0.16], [4.5, 0.10], [9.0, 0.05]]:
+		var x_bottom = band_center + stripe[0]
+		var x_top = x_bottom + slant
+		# アート枠の中に完全に収まるときだけ描く(枠からはみ出さない)
+		if x_bottom < art.position.x or x_bottom > art.end.x:
+			continue
+		if x_top < art.position.x or x_top > art.end.x:
+			continue
+		draw_line(Vector2(x_top, art.position.y), Vector2(x_bottom, art.end.y),
+			Color(tint, stripe[1] * boost * alpha), 5.0)
+
 func _get_card_icon() -> Texture2D:
 	var id: String = card_data.get("id", "")
 	if id.is_empty():
@@ -645,6 +692,15 @@ func flash_unplayable() -> void:
 	var t = create_tween()
 	t.tween_property(self, "modulate", Color(1, 0.3, 0.3), 0.08)
 	t.tween_property(self, "modulate", Color(1, 1, 1), 0.12)
+
+func _process(delta: float) -> void:
+	# ホロスイープの時間管理。帯が見えている間だけ再描画する
+	_sweep_phase += delta
+	var t = fmod(_sweep_phase + _sweep_offset, SWEEP_PERIOD)
+	var active = t < SWEEP_DURATION
+	if active or _sweep_was_active:
+		queue_redraw()
+	_sweep_was_active = active
 
 func _ready() -> void:
 	mouse_entered.connect(_on_mouse_entered)

@@ -18,8 +18,10 @@ var relic_id: String = ""
 var _relic: Dictionary = {}
 var _tooltip: Control = null
 var _hovered: bool = false
+var _phase: float = 0.0
+var _reveal: float = -1.0  # 0〜1の間は獲得フラッシュ演出中
 
-func setup(id: String, px: float = 32.0, tooltip_enabled: bool = true) -> void:
+func setup(id: String, px: float = 32.0, tooltip_enabled: bool = true, reveal: bool = false) -> void:
 	relic_id = id
 	_relic = GameState.get_relic_definition(id)
 	custom_minimum_size = Vector2(px, px)
@@ -30,6 +32,27 @@ func setup(id: String, px: float = 32.0, tooltip_enabled: bool = true) -> void:
 		mouse_exited.connect(_on_mouse_exited)
 	else:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# エピック=周回光 / ボス=脈動 はアニメーションが必要
+	var rarity = _relic.get("rarity", "common")
+	set_process(rarity == "epic" or rarity == "boss" or reveal)
+	if reveal:
+		_reveal = 0.0
+		pivot_offset = Vector2(px, px) * 0.5
+		scale = Vector2(1.6, 1.6)
+		modulate.a = 0.0
+		var tw = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+		tw.tween_property(self, "modulate:a", 1.0, 0.18)
+		tw.parallel().tween_property(self, "scale", Vector2.ONE, 0.32)
+	queue_redraw()
+
+func _process(delta: float) -> void:
+	_phase += delta
+	if _reveal >= 0.0:
+		_reveal += delta * 1.6
+		if _reveal >= 1.0:
+			_reveal = -1.0
+			var rarity = _relic.get("rarity", "common")
+			set_process(rarity == "epic" or rarity == "boss")
 	queue_redraw()
 
 func _draw() -> void:
@@ -52,10 +75,34 @@ func _draw() -> void:
 		draw_texture_rect(tex, Rect2(c - Vector2(s, s) * 0.5, Vector2(s, s)),
 			false, Color(rc.lightened(0.38), 0.95))
 
+	# ── レア度による格付け ────────────────────────────────────────────────────
+	var rarity = _relic.get("rarity", "common")
+	# レア以上: リングに目盛り装飾
+	if rarity != "common":
+		for i in 12:
+			var ang = TAU * i / 12.0
+			var dir = Vector2(cos(ang), sin(ang))
+			draw_line(c + dir * (r - 1.0), c + dir * (r + 1.5), Color(OrnateFrame.BRONZE_BRIGHT, 0.40), 1.2)
+	# エピック: 外周を光が周回する
+	if rarity == "epic":
+		var sweep_ang = _phase * 1.6
+		draw_arc(c, r + 1.5, sweep_ang, sweep_ang + PI * 0.4, 10, Color(rc.lightened(0.40), 0.85), 1.6)
+	# ボス: 脈動するリング+四方のひし形
+	if rarity == "boss":
+		var pulse = 0.5 + sin(_phase * 2.4) * 0.5
+		draw_circle(c, r + 2.5, Color(rc, 0.20 + pulse * 0.40), false, 1.5)
+		if size.x < 56.0:
+			for off in [Vector2(0, -r), Vector2(r, 0), Vector2(0, r), Vector2(-r, 0)]:
+				OrnateFrame.draw_gem(self, c + off, 2.6, 0.85)
+
 	# 大きいサイズでは四方に飾り
 	if size.x >= 56.0:
 		for off in [Vector2(0, -r), Vector2(r, 0), Vector2(0, r), Vector2(-r, 0)]:
 			OrnateFrame.draw_gem(self, c + off, 3.4, 0.85)
+
+	# 獲得フラッシュ
+	if _reveal >= 0.0 and _reveal < 1.0:
+		draw_circle(c, r * (0.7 + _reveal * 1.0), Color(1.0, 0.98, 0.92, (1.0 - _reveal) * 0.65))
 
 	if _hovered:
 		draw_circle(c, r + 2.0, Color(1.0, 0.88, 0.50, 0.60), false, 1.5)
