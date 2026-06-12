@@ -45,7 +45,8 @@ var first_attack_used_this_combat: bool = false
 # mercenary_axeman, poison_rogue, war_mage, battle_scavenger, war_wolf,
 # wyvern_dragon, stone_golem, dark_fairy, royal_guard, alley_duelist,
 # royal_mage, prison_guard, hired_knight, beastman_mercenary,
-# elven_city_archer, foxkin_spy, elven_court_mage, wolfkin_guard
+# elven_city_archer, foxkin_spy, elven_court_mage, wolfkin_guard,
+# palace_steward, throne_guard, king_hound, living_holy_armor, chancellor
 var debug_enemy_enabled: bool = false
 var debug_enemy_id: String = ""
 var current_battle_background_key: String = ""
@@ -66,6 +67,10 @@ const BACKGROUND_PATHS: Dictionary = {
 	"act2_battle_city_gate": "res://assets/backgrounds/act2/act2_battle_city_gate.png",
 	"act2_battle_cathedral_street": "res://assets/backgrounds/act2/act2_battle_cathedral_street.png",
 	"act2_battle_execution_ground": "res://assets/backgrounds/act2/act2_battle_execution_ground.png",
+	"act3_map": "res://assets/backgrounds/act3/act3_map_background.png",
+	"act3_battle_palace_gate": "res://assets/backgrounds/act3/act3_battle_palace_gate.png",
+	"act3_battle_great_hall": "res://assets/backgrounds/act3/act3_battle_great_hall.png",
+	"act3_battle_throne_room": "res://assets/backgrounds/act3/act3_battle_throne_room.png",
 	"shared_event": "res://assets/backgrounds/shared/event_background.png",
 	"shared_rest": "res://assets/backgrounds/shared/rest_background.png",
 	"shared_treasure": "res://assets/backgrounds/shared/treasure_background.png",
@@ -89,6 +94,18 @@ func get_battle_background_key_for_enemy(enemy_id: String) -> String:
 	return get_battle_background_key_for_enemies([enemy_id])
 
 func get_battle_background_key_for_enemies(enemy_ids: Array) -> String:
+	if current_act == 3:
+		for enemy_id in enemy_ids:
+			if enemy_id == "hero":
+				return "act3_battle_throne_room"
+		for enemy_id in enemy_ids:
+			if enemy_id == "paladin_captain":
+				return "act3_battle_throne_room"
+		for enemy_id in enemy_ids:
+			if ["chancellor", "inquisitor", "living_holy_armor", "palace_steward", "sun_priest", "white_shield_knight"].has(enemy_id):
+				return "act3_battle_great_hall"
+		return "act3_battle_palace_gate"
+
 	if current_act == 2:
 		for enemy_id in enemy_ids:
 			if enemy_id == "fallen_saint":
@@ -127,7 +144,11 @@ func load_background_texture(path: String) -> Texture2D:
 	push_warning("Failed to load background: %s" % path)
 	return null
 
-const MAP_NODES: Dictionary = {
+# ── 幕ごとのマップ定義 ─────────────────────────────────────────────────────────
+# MAP_NODES は現在の幕のマップを指す(reset_map / start_act*_map / apply_act_map で切替)。
+
+# 第1幕: 街道と森 — 横に広い三本道
+const MAP_NODES_ACT1: Dictionary = {
 	"start": {"id": "start", "layer": 0, "type": "start", "connections": ["starter_relic"], "pos": Vector2(540, 1080)},
 	"starter_relic": {"id": "starter_relic", "layer": 0, "type": "starter_relic", "connections": ["f2_battle_a", "f2_battle_b"], "pos": Vector2(540, 1040)},
 	"f2_battle_a": {"id": "f2_battle_a", "layer": 1, "type": "normal_battle", "connections": ["f3_battle_a", "f3_event"], "pos": Vector2(380, 960)},
@@ -163,8 +184,79 @@ const MAP_NODES: Dictionary = {
 	"f14_boss": {"id": "f14_boss", "layer": 14, "type": "boss", "connections": [], "pos": Vector2(540, 34)},
 }
 
+# 第2幕: 王都の市街 — 左右二本の大通りがときどき交差する
+const MAP_NODES_ACT2: Dictionary = {
+	"start": {"id": "start", "layer": 0, "type": "start", "connections": ["starter_relic"], "pos": Vector2(540, 1080)},
+	"starter_relic": {"id": "starter_relic", "layer": 0, "type": "starter_relic", "connections": ["c2_battle_a", "c2_battle_b"], "pos": Vector2(540, 1040)},
+	"c2_battle_a": {"id": "c2_battle_a", "layer": 2, "type": "normal_battle", "connections": ["c3_battle_a", "c3_event"], "pos": Vector2(330, 960)},
+	"c2_battle_b": {"id": "c2_battle_b", "layer": 2, "type": "normal_battle", "connections": ["c3_event", "c3_battle_b"], "pos": Vector2(750, 960)},
+	"c3_battle_a": {"id": "c3_battle_a", "layer": 3, "type": "normal_battle", "connections": ["c4_elite", "c4_treasure"], "pos": Vector2(270, 870)},
+	"c3_event": {"id": "c3_event", "layer": 3, "type": "event", "connections": ["c4_treasure"], "pos": Vector2(540, 880)},
+	"c3_battle_b": {"id": "c3_battle_b", "layer": 3, "type": "normal_battle", "connections": ["c4_treasure", "c4_battle"], "pos": Vector2(810, 870)},
+	"c4_elite": {"id": "c4_elite", "layer": 4, "type": "elite_battle", "connections": ["c5_rest"], "pos": Vector2(270, 780)},
+	"c4_treasure": {"id": "c4_treasure", "layer": 4, "type": "treasure", "connections": ["c5_rest", "c5_battle"], "pos": Vector2(540, 790)},
+	"c4_battle": {"id": "c4_battle", "layer": 4, "type": "normal_battle", "connections": ["c5_battle", "c5_event"], "pos": Vector2(810, 780)},
+	"c5_rest": {"id": "c5_rest", "layer": 5, "type": "rest", "connections": ["c6_battle_a"], "pos": Vector2(300, 690)},
+	"c5_battle": {"id": "c5_battle", "layer": 5, "type": "normal_battle", "connections": ["c6_battle_a", "c6_battle_b"], "pos": Vector2(620, 690)},
+	"c5_event": {"id": "c5_event", "layer": 5, "type": "event", "connections": ["c6_battle_b", "c6_treasure"], "pos": Vector2(850, 690)},
+	"c6_battle_a": {"id": "c6_battle_a", "layer": 6, "type": "normal_battle", "connections": ["c7_event", "c7_elite"], "pos": Vector2(300, 600)},
+	"c6_battle_b": {"id": "c6_battle_b", "layer": 6, "type": "normal_battle", "connections": ["c7_elite"], "pos": Vector2(640, 600)},
+	"c6_treasure": {"id": "c6_treasure", "layer": 6, "type": "treasure", "connections": ["c7_elite", "c7_battle"], "pos": Vector2(860, 600)},
+	"c7_event": {"id": "c7_event", "layer": 7, "type": "event", "connections": ["c8_battle_a"], "pos": Vector2(330, 510)},
+	"c7_elite": {"id": "c7_elite", "layer": 7, "type": "elite_battle", "connections": ["c8_battle_a", "c8_battle_b"], "pos": Vector2(580, 510)},
+	"c7_battle": {"id": "c7_battle", "layer": 7, "type": "normal_battle", "connections": ["c8_battle_b", "c8_event"], "pos": Vector2(830, 510)},
+	"c8_battle_a": {"id": "c8_battle_a", "layer": 8, "type": "normal_battle", "connections": ["c9_rest", "c9_elite"], "pos": Vector2(330, 420)},
+	"c8_battle_b": {"id": "c8_battle_b", "layer": 8, "type": "normal_battle", "connections": ["c9_elite"], "pos": Vector2(640, 420)},
+	"c8_event": {"id": "c8_event", "layer": 8, "type": "event", "connections": ["c9_elite", "c9_battle"], "pos": Vector2(860, 420)},
+	"c9_rest": {"id": "c9_rest", "layer": 9, "type": "rest", "connections": ["c10_battle_a"], "pos": Vector2(400, 330)},
+	"c9_elite": {"id": "c9_elite", "layer": 9, "type": "elite_battle", "connections": ["c10_battle_a", "c10_battle_b"], "pos": Vector2(660, 330)},
+	"c9_battle": {"id": "c9_battle", "layer": 9, "type": "normal_battle", "connections": ["c10_battle_b"], "pos": Vector2(880, 330)},
+	"c10_battle_a": {"id": "c10_battle_a", "layer": 10, "type": "normal_battle", "connections": ["c11_rest"], "pos": Vector2(420, 240)},
+	"c10_battle_b": {"id": "c10_battle_b", "layer": 10, "type": "normal_battle", "connections": ["c11_rest"], "pos": Vector2(700, 240)},
+	"c11_rest": {"id": "c11_rest", "layer": 11, "type": "rest", "connections": ["c12_boss"], "pos": Vector2(540, 150)},
+	"c12_boss": {"id": "c12_boss", "layer": 12, "type": "boss", "connections": [], "pos": Vector2(540, 60)},
+}
+
+# 第3幕: 王宮 — 縦に細く荘厳。中間に必ず通る白盾の騎士(中ボス)の関門がある
+const MAP_NODES_ACT3: Dictionary = {
+	"start": {"id": "start", "layer": 0, "type": "start", "connections": ["starter_relic"], "pos": Vector2(540, 1080)},
+	"starter_relic": {"id": "starter_relic", "layer": 0, "type": "starter_relic", "connections": ["p2_battle_a", "p2_battle_b"], "pos": Vector2(540, 1040)},
+	"p2_battle_a": {"id": "p2_battle_a", "layer": 2, "type": "normal_battle", "connections": ["p3_event", "p3_battle"], "pos": Vector2(420, 950)},
+	"p2_battle_b": {"id": "p2_battle_b", "layer": 2, "type": "normal_battle", "connections": ["p3_battle", "p3_treasure"], "pos": Vector2(660, 950)},
+	"p3_event": {"id": "p3_event", "layer": 3, "type": "event", "connections": ["p4_battle"], "pos": Vector2(380, 860)},
+	"p3_battle": {"id": "p3_battle", "layer": 3, "type": "normal_battle", "connections": ["p4_battle", "p4_elite"], "pos": Vector2(540, 860)},
+	"p3_treasure": {"id": "p3_treasure", "layer": 3, "type": "treasure", "connections": ["p4_elite"], "pos": Vector2(700, 860)},
+	"p4_battle": {"id": "p4_battle", "layer": 4, "type": "normal_battle", "connections": ["p5_rest", "p5_battle"], "pos": Vector2(440, 770)},
+	"p4_elite": {"id": "p4_elite", "layer": 4, "type": "elite_battle", "connections": ["p5_rest", "p5_battle"], "pos": Vector2(660, 770)},
+	"p5_rest": {"id": "p5_rest", "layer": 5, "type": "rest", "connections": ["p6_midboss"], "pos": Vector2(440, 680)},
+	"p5_battle": {"id": "p5_battle", "layer": 5, "type": "normal_battle", "connections": ["p6_midboss"], "pos": Vector2(660, 680)},
+	# 大広間の関門 — 全ルートがここに収束する(白盾の騎士・中ボス)
+	"p6_midboss": {"id": "p6_midboss", "layer": 6, "type": "boss", "enemy_id": "white_shield_knight", "connections": ["p7_battle", "p7_event"], "pos": Vector2(540, 580)},
+	"p7_battle": {"id": "p7_battle", "layer": 7, "type": "normal_battle", "connections": ["p8_elite", "p8_treasure"], "pos": Vector2(420, 480)},
+	"p7_event": {"id": "p7_event", "layer": 7, "type": "event", "connections": ["p8_elite", "p8_treasure"], "pos": Vector2(660, 480)},
+	"p8_elite": {"id": "p8_elite", "layer": 8, "type": "elite_battle", "connections": ["p9_battle_a", "p9_battle_b"], "pos": Vector2(420, 390)},
+	"p8_treasure": {"id": "p8_treasure", "layer": 8, "type": "treasure", "connections": ["p9_battle_b"], "pos": Vector2(660, 390)},
+	"p9_battle_a": {"id": "p9_battle_a", "layer": 9, "type": "normal_battle", "connections": ["p10_rest"], "pos": Vector2(440, 290)},
+	"p9_battle_b": {"id": "p9_battle_b", "layer": 9, "type": "normal_battle", "connections": ["p10_rest"], "pos": Vector2(660, 290)},
+	"p10_rest": {"id": "p10_rest", "layer": 10, "type": "rest", "connections": ["p11_boss"], "pos": Vector2(540, 190)},
+	"p11_boss": {"id": "p11_boss", "layer": 11, "type": "boss", "connections": [], "pos": Vector2(540, 80)},
+}
+
+# 現在の幕のマップ(既存コードはこの MAP_NODES を参照する)
+var MAP_NODES: Dictionary = MAP_NODES_ACT1
+
+func get_map_nodes_for_act(act: int) -> Dictionary:
+	match act:
+		2: return MAP_NODES_ACT2
+		3: return MAP_NODES_ACT3
+		_: return MAP_NODES_ACT1
+
+func apply_act_map() -> void:
+	MAP_NODES = get_map_nodes_for_act(current_act)
+
 func reset_map() -> void:
 	current_act = 1
+	apply_act_map()
 	map_current_node_id = "start"
 	map_visited_nodes = ["start"]
 	map_available_nodes = ["starter_relic"]
@@ -184,11 +276,23 @@ func complete_map_node(node_id: String) -> void:
 
 func start_act2_map() -> void:
 	current_act = 2
+	apply_act_map()
 	map_current_node_id = "starter_relic"
 	map_visited_nodes = ["start", "starter_relic"]
 	map_available_nodes = MAP_NODES.get("starter_relic", {}).get("connections", []).duplicate()
 	map_encounter_enemy_idx = 0
 	map_encounter_enemy_id = "holy_soldier"
+	map_encounter_is_boss = false
+	last_enemy_id = ""
+
+func start_act3_map() -> void:
+	current_act = 3
+	apply_act_map()
+	map_current_node_id = "starter_relic"
+	map_visited_nodes = ["start", "starter_relic"]
+	map_available_nodes = MAP_NODES.get("starter_relic", {}).get("connections", []).duplicate()
+	map_encounter_enemy_idx = 0
+	map_encounter_enemy_id = "royal_guard"
 	map_encounter_is_boss = false
 	last_enemy_id = ""
 
@@ -680,6 +784,11 @@ const ENEMY_IDS: Array = [
 	"foxkin_spy",
 	"elven_court_mage",
 	"wolfkin_guard",
+	"palace_steward",
+	"throne_guard",
+	"king_hound",
+	"living_holy_armor",
+	"chancellor",
 ]
 
 const ENEMY_POOLS: Dictionary = {
@@ -689,6 +798,9 @@ const ENEMY_POOLS: Dictionary = {
 	"act2_normal": ["royal_guard", "alley_duelist", "prison_guard", "beastman_mercenary", "elven_city_archer", "foxkin_spy", "chain_jailer", "novice_cleric", "elven_court_mage"],
 	"act2_elite": ["royal_mage", "hired_knight", "wolfkin_guard"],
 	"act2_boss": ["fallen_saint"],
+	"act3_normal": ["holy_soldier", "temple_archer", "sun_priest", "palace_steward", "throne_guard", "king_hound", "living_holy_armor"],
+	"act3_elite": ["inquisitor", "paladin_captain", "chancellor"],
+	"act3_boss": ["hero"],
 }
 
 const ENEMIES: Dictionary = {
@@ -749,7 +861,7 @@ const ENEMIES: Dictionary = {
 	"white_shield_knight": {
 		"id": "white_shield_knight", "enemy_id": "white_shield_knight", "name": "白盾の騎士", "name_jp": "白盾の騎士", "enemy_name": "白盾の騎士", "display_name": "白盾の騎士",
 		"image_path": "res://assets/enemies/white_shield_knight.png", "sprite_path": "res://assets/enemies/white_shield_knight.png",
-		"max_hp": 88, "hp": 88, "attack": 11, "block": 15, "enemy_type": "white_shield_knight", "turn_count": 0, "next_action": {}, "is_boss": false,
+		"max_hp": 120, "hp": 120, "attack": 12, "block": 16, "enemy_type": "white_shield_knight", "turn_count": 0, "next_action": {}, "is_boss": false,
 		"shape": "sprite_enemy", "sprite_scale": 0.59, "sprite_offset": Vector2(0, 154), "enemy_name_offset": Vector2(0, -254), "enemy_hp_offset": Vector2(0, -228), "enemy_status_offset": Vector2(0, -204), "hp_bar_width": 196.0, "intent_offset": Vector2(225, -82), "glow_color": Color(0.88, 0.92, 1.0), "aura_color": Color(0.88, 0.92, 1.0), "aura_strength": 0.12, "shadow_scale": Vector2(1.18, 0.94)
 	},
 	"fallen_saint": {
@@ -889,6 +1001,37 @@ const ENEMIES: Dictionary = {
 		"image_path": "res://assets/enemies/act2/wolfkin_guard.png", "sprite_path": "res://assets/enemies/act2/wolfkin_guard.png",
 		"max_hp": 84, "hp": 84, "attack": 10, "block": 14, "enemy_type": "wolfkin_guard", "turn_count": 0, "next_action": {}, "is_boss": false, "content_act": 2, "future_enemy": true,
 		"shape": "sprite_enemy", "sprite_scale": 0.58, "sprite_offset": Vector2(0, 150), "enemy_name_offset": Vector2(0, -250), "enemy_hp_offset": Vector2(0, -224), "enemy_status_offset": Vector2(0, -200), "hp_bar_width": 184.0, "intent_offset": Vector2(225, -78), "glow_color": Color(0.50, 0.56, 0.62), "aura_color": Color(0.50, 0.56, 0.62), "aura_strength": 0.09, "shadow_scale": Vector2(1.12, 0.90)
+	},
+	"palace_steward": {
+		"id": "palace_steward", "enemy_id": "palace_steward", "name": "王宮侍従長", "name_jp": "王宮侍従長", "enemy_name": "王宮侍従長", "display_name": "王宮侍従長",
+		"image_path": "res://assets/enemies/act3/palace_steward.png", "sprite_path": "res://assets/enemies/act3/palace_steward.png",
+		"max_hp": 46, "hp": 46, "attack": 5, "block": 0, "enemy_type": "palace_steward", "turn_count": 0, "next_action": {}, "is_boss": false, "content_act": 3, "future_enemy": true,
+		"shape": "sprite_enemy", "sprite_scale": 0.56, "sprite_offset": Vector2(0, 150), "enemy_name_offset": Vector2(0, -250), "enemy_hp_offset": Vector2(0, -224), "enemy_status_offset": Vector2(0, -200), "hp_bar_width": 184.0, "intent_offset": Vector2(225, -78), "glow_color": Color(0.80, 0.68, 0.48), "aura_color": Color(0.80, 0.68, 0.48), "aura_strength": 0.08, "shadow_scale": Vector2(1.06, 0.88)
+	},
+	"throne_guard": {
+		"id": "throne_guard", "enemy_id": "throne_guard", "name": "玉座の間の衛兵", "name_jp": "玉座の間の衛兵", "enemy_name": "玉座の間の衛兵", "display_name": "玉座の間の衛兵",
+		"image_path": "res://assets/enemies/act3/throne_guard.png", "sprite_path": "res://assets/enemies/act3/throne_guard.png",
+		"max_hp": 64, "hp": 64, "attack": 10, "block": 14, "enemy_type": "throne_guard", "turn_count": 0, "next_action": {}, "is_boss": false, "content_act": 3, "future_enemy": true,
+		"shape": "sprite_enemy", "sprite_scale": 0.58, "sprite_offset": Vector2(0, 150), "enemy_name_offset": Vector2(0, -250), "enemy_hp_offset": Vector2(0, -224), "enemy_status_offset": Vector2(0, -200), "hp_bar_width": 188.0, "intent_offset": Vector2(225, -78), "glow_color": Color(0.76, 0.72, 0.62), "aura_color": Color(0.76, 0.72, 0.62), "aura_strength": 0.09, "shadow_scale": Vector2(1.14, 0.92)
+	},
+	"king_hound": {
+		"id": "king_hound", "enemy_id": "king_hound", "name": "王の猟犬", "name_jp": "王の猟犬", "enemy_name": "王の猟犬", "display_name": "王の猟犬",
+		"image_path": "res://assets/enemies/act3/king_hound.png", "sprite_path": "res://assets/enemies/act3/king_hound.png",
+		"max_hp": 48, "hp": 48, "attack": 5, "block": 0, "enemy_type": "king_hound", "turn_count": 0, "next_action": {}, "is_boss": false, "content_act": 3, "future_enemy": true,
+		"shape": "sprite_enemy", "sprite_scale": 0.58, "sprite_offset": Vector2(0, 184), "enemy_name_offset": Vector2(0, -248), "enemy_hp_offset": Vector2(0, -222), "enemy_status_offset": Vector2(0, -198), "hp_bar_width": 176.0, "intent_offset": Vector2(225, -78), "glow_color": Color(0.78, 0.56, 0.42), "aura_color": Color(0.78, 0.56, 0.42), "aura_strength": 0.10, "shadow_scale": Vector2(1.12, 0.86)
+	},
+	"living_holy_armor": {
+		"id": "living_holy_armor", "enemy_id": "living_holy_armor", "name": "生ける聖鎧", "name_jp": "生ける聖鎧", "enemy_name": "生ける聖鎧", "display_name": "生ける聖鎧",
+		"image_path": "res://assets/enemies/act3/living_holy_armor.png", "sprite_path": "res://assets/enemies/act3/living_holy_armor.png",
+		"max_hp": 86, "hp": 86, "attack": 16, "block": 18, "enemy_type": "living_holy_armor", "turn_count": 0, "next_action": {}, "is_boss": false, "content_act": 3, "future_enemy": true,
+		"shape": "sprite_enemy", "sprite_scale": 0.62, "sprite_offset": Vector2(0, 160), "enemy_name_offset": Vector2(0, -254), "enemy_hp_offset": Vector2(0, -228), "enemy_status_offset": Vector2(0, -204), "hp_bar_width": 196.0, "intent_offset": Vector2(225, -82), "glow_color": Color(0.86, 0.84, 0.72), "aura_color": Color(0.86, 0.84, 0.72), "aura_strength": 0.10, "shadow_scale": Vector2(1.24, 0.94)
+	},
+	"chancellor": {
+		"id": "chancellor", "enemy_id": "chancellor", "name": "宰相", "name_jp": "宰相", "enemy_name": "宰相", "display_name": "宰相",
+		"image_path": "res://assets/enemies/act3/chancellor.png", "sprite_path": "res://assets/enemies/act3/chancellor.png",
+		"max_hp": 58, "hp": 58, "attack": 6, "block": 12, "enemy_type": "chancellor", "turn_count": 0, "next_action": {}, "is_boss": false, "content_act": 3, "future_enemy": true,
+		# TODO: 宰相撃破時に物語断片を落とす場合は、この敵IDを報酬分岐で参照する。
+		"shape": "sprite_enemy", "sprite_scale": 0.56, "sprite_offset": Vector2(0, 150), "enemy_name_offset": Vector2(0, -250), "enemy_hp_offset": Vector2(0, -224), "enemy_status_offset": Vector2(0, -200), "hp_bar_width": 184.0, "intent_offset": Vector2(225, -78), "glow_color": Color(0.60, 0.46, 0.82), "aura_color": Color(0.60, 0.46, 0.82), "aura_strength": 0.11, "shadow_scale": Vector2(1.06, 0.88)
 	},
 }
 
@@ -1289,7 +1432,12 @@ func choose_enemy_for_map_node(node_type: String, node_id: String = "") -> Strin
 	if debug_enemy_enabled and is_valid_enemy_id(debug_enemy_id):
 		return debug_enemy_id
 
-	var act_prefix := "act2" if current_act == 2 else "act1"
+	# ノードに敵が固定指定されていればそれを使う(中ボス関門など)
+	var fixed_enemy := String(MAP_NODES.get(node_id, {}).get("enemy_id", ""))
+	if not fixed_enemy.is_empty() and is_valid_enemy_id(fixed_enemy):
+		return fixed_enemy
+
+	var act_prefix := "act%d" % current_act if current_act >= 1 and current_act <= 3 else "act1"
 	var pool_key := "%s_normal" % act_prefix
 	match node_type:
 		"normal_battle":
@@ -1302,7 +1450,7 @@ func choose_enemy_for_map_node(node_type: String, node_id: String = "") -> Strin
 			pool_key = "%s_normal" % act_prefix
 	var pool: Array = ENEMY_POOLS.get(pool_key, ENEMY_POOLS["act1_normal"])
 	if pool.is_empty():
-		return "royal_guard" if current_act == 2 else "young_swordsman"
+		return "royal_guard" if current_act >= 2 else "young_swordsman"
 	var candidates := pool.duplicate()
 	if candidates.size() > 1 and not last_enemy_id.is_empty():
 		candidates.erase(last_enemy_id)

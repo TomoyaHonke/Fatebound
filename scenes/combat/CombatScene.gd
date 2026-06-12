@@ -10,6 +10,7 @@ const DECK_VIEWER_SCENE        = "res://scenes/ui/DeckViewer.tscn"
 const RELIC_VIEWER_SCENE       = "res://scenes/ui/RelicViewer.tscn"
 const RELIC_REWARD_SCENE       = "res://scenes/ui/RelicRewardScreen.tscn"
 const BOSS_RELIC_REWARD_SCENE  = "res://scenes/ui/BossRelicRewardScreen.tscn"
+const ACT2_BOSS_RELIC_REWARD_BACKGROUND = "res://assets/backgrounds/act2/act2_boss_relic_reward_fallen_saint.png"
 
 # ── Split-out modules ─────────────────────────────────────────────────────────
 const EnemyAI       = preload("res://scenes/combat/EnemyAI.gd")
@@ -36,6 +37,24 @@ const STATUS_DESCRIPTIONS = {
 	"weak": {"name": "脱力", "description": "与えるダメージが低下する。", "value_label": "残り"},
 	"poison": {"name": "毒", "description": "ターン終了時にHPを失う。", "value_label": "残り"},
 	"strength": {"name": "筋力", "description": "攻撃カードのダメージが増加する。", "value_label": "値"}
+}
+const BOSS_DIALOGUES = {
+	"hunter_companion": {
+		"start": "……生きていたのか。なら、二度埋めるだけだ。",
+		"defeat": "すまな──"
+	},
+	"fallen_saint": {
+		"start": "……■■■？　そんな、ありえない……。\nあの墓には、毎年花を供えていたのよ。",
+		"defeat": "祈りは……届かなかったのね……"
+	},
+	"hero": {
+		"start": "……本当に帰ってきたのか。\nあの夜、俺が一番恐れていたお前が。",
+		"defeat": "これで……ようやく、肩の荷が降りる……"
+	},
+	"white_shield_knight": {
+		"start": "ここから先は、王の聖域だ。──何人たりとも通さん。",
+		"defeat": "壁は、破られた……陛下……お逃げ、を……"
+	}
 }
 
 # ── Layout constants ──────────────────────────────────────────────────────────
@@ -103,6 +122,9 @@ var _status_tooltip_panel: Panel
 var _status_tooltip_label: Label
 var _enemy_info_area: HBoxContainer
 var _enemy_info_cards: Array = []
+var _boss_dialogue_layer: Control
+var _boss_dialogue_callback: Callable
+var _boss_dialogue_closing: bool = false
 
 func _ready() -> void:
 	_apply_screen_scale()
@@ -149,6 +171,12 @@ func _apply_screen_scale() -> void:
 		scaler.apply(self)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _boss_dialogue_layer and _boss_dialogue_layer.visible:
+		if event is InputEventKey and event.pressed and not event.echo:
+			if event.keycode == KEY_ENTER or event.keycode == KEY_SPACE:
+				_close_boss_dialogue()
+				get_viewport().set_input_as_handled()
+		return
 	# キーボード操作: 1〜9でカード使用、Eでターン終了
 	if not (event is InputEventKey and event.pressed and not event.echo):
 		return
@@ -268,11 +296,13 @@ func _build_ui() -> void:
 func _build_deck_viewer() -> void:
 	var viewer_res = load(DECK_VIEWER_SCENE)
 	_deck_viewer = viewer_res.instantiate()
+	_deck_viewer.closed.connect(_sync_enemy_info_visibility)
 	add_child(_deck_viewer)
 
 func _build_relic_viewer() -> void:
 	var res = load(RELIC_VIEWER_SCENE)
 	_relic_viewer = res.instantiate()
+	_relic_viewer.closed.connect(_sync_enemy_info_visibility)
 	add_child(_relic_viewer)
 
 func _build_relic_reward() -> void:
@@ -419,6 +449,13 @@ func _set_enemy_info_nodes(enemy_nodes: Array) -> void:
 		card.setup(enemy_node)
 		_enemy_info_area.add_child(card)
 		_enemy_info_cards.append(card)
+	_sync_enemy_info_visibility()
+
+func _sync_enemy_info_visibility() -> void:
+	if not _enemy_info_area:
+		return
+	var viewer_open = (_deck_viewer and _deck_viewer.visible) or (_relic_viewer and _relic_viewer.visible)
+	_enemy_info_area.visible = not viewer_open
 
 func _build_energy_panel() -> void:
 	var panel = Panel.new()
@@ -465,13 +502,15 @@ func _build_pile_buttons() -> void:
 	_draw_pile_btn = _make_button("山札 0", Vector2(94, 698), Vector2(150, 30))
 	_draw_pile_btn.add_theme_font_size_override("font_size", 13)
 	_draw_pile_btn.pressed.connect(func():
-		_deck_viewer.show_deck(_sorted_pile(GameState.draw_pile), "山札(順不同)"))
+		_deck_viewer.show_deck(_sorted_pile(GameState.draw_pile), "山札(順不同)")
+		_sync_enemy_info_visibility())
 	add_child(_draw_pile_btn)
 
 	_discard_pile_btn = _make_button("捨て札 0", Vector2(1155, 692), Vector2(150, 30))
 	_discard_pile_btn.add_theme_font_size_override("font_size", 13)
 	_discard_pile_btn.pressed.connect(func():
-		_deck_viewer.show_deck(_sorted_pile(GameState.discard), "捨て札"))
+		_deck_viewer.show_deck(_sorted_pile(GameState.discard), "捨て札")
+		_sync_enemy_info_visibility())
 	add_child(_discard_pile_btn)
 
 func _sorted_pile(pile: Array) -> Array:
@@ -648,6 +687,108 @@ func _prune_card_nodes() -> void:
 			valid_nodes.append(card_node)
 	_card_nodes = valid_nodes
 
+func _is_boss_encounter() -> bool:
+	return bool(_enemy_data.get("is_boss", false)) or GameState.map_encounter_is_boss
+
+func _active_enemy_id() -> String:
+	return String(_enemy_data.get("enemy_id", _enemy_data.get("enemy_type", _enemy_data.get("id", ""))))
+
+func _has_boss_dialogue(timing: String) -> bool:
+	if not _is_boss_encounter():
+		return false
+	var enemy_id = _active_enemy_id()
+	return BOSS_DIALOGUES.has(enemy_id) and String(BOSS_DIALOGUES[enemy_id].get(timing, "")).length() > 0
+
+func _show_boss_dialogue(timing: String, callback: Callable) -> void:
+	if not _has_boss_dialogue(timing):
+		if callback.is_valid():
+			callback.call()
+		return
+	if _boss_dialogue_layer and is_instance_valid(_boss_dialogue_layer):
+		_boss_dialogue_layer.queue_free()
+	_boss_dialogue_callback = callback
+	_boss_dialogue_closing = false
+	_busy = true
+	if _end_turn_btn:
+		_end_turn_btn.disabled = true
+
+	var enemy_id = _active_enemy_id()
+	var dialogue: Dictionary = BOSS_DIALOGUES[enemy_id]
+	var speaker = _enemy_data.get("display_name", _enemy_data.get("name_jp", _enemy_data.get("name", "敵")))
+
+	_boss_dialogue_layer = Control.new()
+	_boss_dialogue_layer.name = "BossDialogueLayer"
+	_boss_dialogue_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_boss_dialogue_layer.mouse_filter = Control.MOUSE_FILTER_STOP
+	_boss_dialogue_layer.z_index = 2000
+	_boss_dialogue_layer.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			_close_boss_dialogue()
+			get_viewport().set_input_as_handled()
+	)
+	add_child(_boss_dialogue_layer)
+
+	var panel = Panel.new()
+	panel.position = Vector2(150, 500)
+	panel.size = Vector2(980, 142)
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	panel.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			_close_boss_dialogue()
+			get_viewport().set_input_as_handled()
+	)
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.018, 0.012, 0.030, 0.88)
+	style.border_color = Color(0.72, 0.54, 0.30, 0.72)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(6)
+	style.shadow_color = Color(0, 0, 0, 0.42)
+	style.shadow_size = 10
+	panel.add_theme_stylebox_override("panel", style)
+	_boss_dialogue_layer.add_child(panel)
+
+	var name_label = Label.new()
+	name_label.text = speaker
+	name_label.position = Vector2(24, 14)
+	name_label.size = Vector2(600, 22)
+	name_label.add_theme_font_size_override("font_size", 16)
+	name_label.add_theme_color_override("font_color", Color(0.90, 0.74, 0.42))
+	name_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+	name_label.add_theme_constant_override("shadow_offset_x", 1)
+	name_label.add_theme_constant_override("shadow_offset_y", 1)
+	panel.add_child(name_label)
+
+	var text_label = Label.new()
+	text_label.text = "「%s」" % String(dialogue[timing])
+	text_label.position = Vector2(24, 42)
+	text_label.size = Vector2(790, 76)
+	text_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	text_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	text_label.add_theme_font_size_override("font_size", 23)
+	text_label.add_theme_color_override("font_color", Color(0.94, 0.90, 0.86))
+	text_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.90))
+	text_label.add_theme_constant_override("shadow_offset_x", 2)
+	text_label.add_theme_constant_override("shadow_offset_y", 2)
+	panel.add_child(text_label)
+
+	var next_btn = _make_button("次へ", Vector2(900, 104), Vector2(116, 42))
+	next_btn.add_theme_font_size_override("font_size", 17)
+	next_btn.pressed.connect(_close_boss_dialogue)
+	panel.add_child(next_btn)
+	next_btn.grab_focus()
+
+func _close_boss_dialogue() -> void:
+	if _boss_dialogue_closing:
+		return
+	_boss_dialogue_closing = true
+	var callback = _boss_dialogue_callback
+	_boss_dialogue_callback = Callable()
+	if _boss_dialogue_layer and is_instance_valid(_boss_dialogue_layer):
+		_boss_dialogue_layer.queue_free()
+	_boss_dialogue_layer = null
+	if callback.is_valid():
+		callback.call()
+
 # ═══════════════════════════════════════════════════════════════════════════════
 #  Battle Setup
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -668,7 +809,9 @@ func _start_battle() -> void:
 
 	var is_boss = _enemy_data.get("is_boss", false) or GameState.map_encounter_is_boss
 	var node_type = GameState.MAP_NODES.get(GameState.map_current_node_id, {}).get("type", "normal_battle")
-	_was_elite = (node_type == "elite_battle")
+	# 中ボス(接続先のあるボスノード)は強敵扱いでレリック報酬も出す
+	var node_conns: Array = GameState.MAP_NODES.get(GameState.map_current_node_id, {}).get("connections", [])
+	_was_elite = (node_type == "elite_battle") or (node_type == "boss" and not node_conns.is_empty())
 
 	# Boss background tint
 	if is_boss:
@@ -701,12 +844,18 @@ func _start_battle() -> void:
 		_enemy_node.apply_status("weak", 1)
 
 	_update_hud()
-	_start_player_turn()
 
 	# Entrance animation
 	_enemy_node.modulate.a = 0.0
 	var t = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 	t.tween_property(_enemy_node, "modulate:a", 1.0, 0.7)
+	if _has_boss_dialogue("start"):
+		_busy = true
+		_player_turn = false
+		_end_turn_btn.disabled = true
+		t.tween_callback(func(): _show_boss_dialogue("start", Callable(self, "_start_player_turn")))
+	else:
+		_start_player_turn()
 
 func _start_player_turn() -> void:
 	_battle_turn += 1
@@ -1230,7 +1379,7 @@ func _do_enemy_turn() -> void:
 			var raw = _enemy_node.get_attack_value(action.get("value", 0))
 			GameState.apply_status(status, amount)
 			_spawn_enemy_aura(Color(0.70, 0.45, 1.0), true)
-			_log("敵の呪い。%sを%d受けた。" % [_status_name(status), amount])
+			_log(action.get("log", "敵の呪い。%sを%d受けた。" % [_status_name(status), amount]))
 			if raw > 0:
 				_enemy_attack_animation(raw)
 			else:
@@ -1289,7 +1438,7 @@ func _do_enemy_turn() -> void:
 			var amount = action.get("amount", 1)
 			GameState.apply_status(status, amount)
 			_spawn_enemy_aura(Color(0.70, 0.45, 1.0), true)
-			_log("敵の呪い。%sを%d受けた。" % [_status_name(status), amount])
+			_log(action.get("log", "敵の呪い。%sを%d受けた。" % [_status_name(status), amount]))
 			var t = create_tween()
 			t.tween_interval(0.8)
 			t.tween_callback(_end_enemy_turn)
@@ -1483,7 +1632,13 @@ func _on_enemy_died() -> void:
 
 	var t = create_tween()
 	t.tween_interval(0.9)
-	t.tween_callback(_after_enemy_died)
+	t.tween_callback(_continue_after_enemy_died)
+
+func _continue_after_enemy_died() -> void:
+	if _has_boss_dialogue("defeat"):
+		_show_boss_dialogue("defeat", Callable(self, "_after_enemy_died"))
+	else:
+		_after_enemy_died()
 
 func _after_enemy_died() -> void:
 	# 血濡れの剣片: 敵撃破時HP回復
@@ -1491,10 +1646,13 @@ func _after_enemy_died() -> void:
 		GameState.heal(5)
 	GameState.complete_map_node(GameState.map_current_node_id)
 	var is_boss = _enemy_data.get("is_boss", false) or GameState.map_encounter_is_boss
+	# 「幕ボス」= 接続先のないボスノード。中ボス(関門)はラン継続して通常報酬へ
+	var node_connections: Array = GameState.MAP_NODES.get(GameState.map_current_node_id, {}).get("connections", [])
+	var is_final_boss = is_boss and node_connections.is_empty()
 	GameState.clear_combat_piles()
-	if is_boss:
+	if is_final_boss:
 		_battle_layer.visible = false
-		if GameState.current_act == 1:
+		if GameState.current_act <= 2:
 			_show_boss_relic_reward()
 		else:
 			_end_screen.show_end(true)
@@ -1521,17 +1679,38 @@ func _on_relic_reward_accepted() -> void:
 
 func _show_boss_relic_reward() -> void:
 	if not _boss_relic_reward:
-		_advance_to_act2_after_boss_relic()
+		_advance_after_boss_relic()
 		return
-	_boss_relic_reward.show_reward()
+	if GameState.current_act == 2:
+		var relic_ids = GameState.roll_relic_choices(3, "boss_relic")
+		if relic_ids.is_empty():
+			_advance_after_boss_relic()
+			return
+		_boss_relic_reward.show_reward(relic_ids, ACT2_BOSS_RELIC_REWARD_BACKGROUND)
+	else:
+		_boss_relic_reward.show_reward()
 
 func _on_boss_relic_reward_chosen(_relic_id: String) -> void:
-	_advance_to_act2_after_boss_relic()
+	_advance_after_boss_relic()
+
+func _advance_after_boss_relic() -> void:
+	if GameState.current_act == 1:
+		_advance_to_act2_after_boss_relic()
+	elif GameState.current_act == 2:
+		_advance_to_act3_after_boss_relic()
+	else:
+		_end_screen.show_end(true)
 
 func _advance_to_act2_after_boss_relic() -> void:
 	var heal_amount = int(ceil(float(GameState.player_max_hp) * 0.5))
 	GameState.heal(heal_amount)
 	GameState.start_act2_map()
+	_go_to_map()
+
+func _advance_to_act3_after_boss_relic() -> void:
+	var heal_amount = int(ceil(float(GameState.player_max_hp) * 0.5))
+	GameState.heal(heal_amount)
+	GameState.start_act3_map()
 	_go_to_map()
 
 func _go_to_map() -> void:
@@ -1542,10 +1721,12 @@ func _go_to_map() -> void:
 func _on_deck_pressed() -> void:
 	if _deck_viewer and _deck_viewer.has_method("show_deck"):
 		_deck_viewer.show_deck(GameState.get_combat_deck_view_cards())
+		_sync_enemy_info_visibility()
 
 func _on_relic_pressed() -> void:
 	if _relic_viewer and _relic_viewer.has_method("show_relics"):
 		_relic_viewer.show_relics()
+		_sync_enemy_info_visibility()
 
 func _on_player_died() -> void:
 	_busy = true

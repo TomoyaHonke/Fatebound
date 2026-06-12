@@ -3,6 +3,7 @@ extends Control
 signal reward_chosen(relic_id: String)
 
 const ACT1_BOSS_RELIC_IDS := ["former_hunter_bow", "hunter_tracking_eye", "hunter_trapwire"]
+const ACT1_BOSS_RELIC_BACKGROUND := "res://assets/backgrounds/act1/act1_boss_relic_reward_former_hunter.png"
 
 const C_GOLD := Color(0.90, 0.78, 0.25)
 const CARD_W := 640.0
@@ -10,6 +11,7 @@ const CARD_H := 76.0
 const CARD_GAP := 10.0
 
 var _relic_ids: Array = []
+var _background_path: String = ACT1_BOSS_RELIC_BACKGROUND
 var _choice_locked: bool = false
 
 
@@ -19,9 +21,10 @@ func _ready() -> void:
 	hide()
 
 
-func show_reward() -> void:
+func show_reward(relic_ids: Array = ACT1_BOSS_RELIC_IDS, background_path: String = ACT1_BOSS_RELIC_BACKGROUND) -> void:
 	_choice_locked = false
-	_relic_ids = ACT1_BOSS_RELIC_IDS
+	_relic_ids = relic_ids
+	_background_path = background_path
 	_build()
 	show()
 	modulate.a = 0.0
@@ -38,7 +41,7 @@ func _build() -> void:
 	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bg.texture = load("res://assets/backgrounds/act1/act1_boss_relic_reward_former_hunter.png")
+	bg.texture = load(_background_path)
 	add_child(bg)
 
 	var overlay = ColorRect.new()

@@ -71,6 +71,16 @@ static func decide_next_action(enemy_data: Dictionary, enemy_node: Node, turn: i
 			return _elven_court_mage_action(turn)
 		"wolfkin_guard":
 			return _wolfkin_guard_action(turn)
+		"palace_steward":
+			return _palace_steward_action(turn)
+		"throne_guard":
+			return _throne_guard_action(turn)
+		"king_hound":
+			return _king_hound_action(turn)
+		"living_holy_armor":
+			return _living_holy_armor_action(turn)
+		"chancellor":
+			return _chancellor_action(turn)
 		_:
 			return _default_enemy_action(turn)
 
@@ -295,6 +305,42 @@ static func _wolfkin_guard_action(turn: int) -> Dictionary:
 		2: return {"type": "block", "value": 14, "desc": "守護本能"}
 		3: return {"type": "strength", "buff": 2, "desc": "低い唸り", "log": "狼獣人の近衛は低く唸り、攻撃力を上げた。"}
 		_: return {"type": "attack_multi", "value": 5, "times": 2, "desc": "双爪追撃 5x2"}
+
+static func _palace_steward_action(turn: int) -> Dictionary:
+	match turn % 4:
+		1: return {"type": "add_temp_discard", "card_id": "restraint", "amount": 1, "desc": "王宮の作法", "log": "王宮の作法がお前を縛る。拘束を捨て札に混ぜた。"}
+		2: return _attack_action(5, "儀礼の杖 5")
+		3: return {"type": "add_temp_discard", "card_id": "pressure", "amount": 1, "desc": "沈黙の礼法", "log": "王宮侍従長は沈黙の礼法で重圧を捨て札に混ぜた。"}
+		_: return {"type": "apply_status", "status": "weak", "amount": 1, "desc": "形式ばった命令", "log": "王宮侍従長は形式ばった命令を下した。"}
+
+static func _throne_guard_action(turn: int) -> Dictionary:
+	match turn % 4:
+		1: return {"type": "block", "value": 14, "desc": "盾を構える"}
+		2: return _attack_action(10, "盾撃 10")
+		3: return {"type": "block_strength", "value": 10, "buff": 1, "desc": "王座守護", "log": "玉座の間の衛兵は王座守護で守りを固め、攻撃力を上げた。"}
+		_: return _attack_action(15, "圧潰の一撃 15")
+
+static func _king_hound_action(turn: int) -> Dictionary:
+	match turn % 4:
+		1: return {"type": "attack_multi", "value": 5, "times": 2, "desc": "噛み裂き 5x2"}
+		2: return {"type": "strength", "buff": 1, "desc": "血の匂い", "log": "王の猟犬は血の匂いに昂り、攻撃力を上げた。"}
+		3: return {"type": "attack_add_temp_discard", "value": 7, "card_id": "bleeding", "amount": 1, "desc": "深い噛み傷", "log": "王の猟犬は深い噛み傷を刻み、出血を捨て札に混ぜた。"}
+		_: return _attack_action(12, "飛びかかり 12")
+
+static func _living_holy_armor_action(turn: int) -> Dictionary:
+	match turn % 4:
+		1: return {"type": "block", "value": 18, "desc": "軋む歩み"}
+		2: return _attack_action(16, "聖鎧の圧撃 16")
+		3: return {"type": "block_strength", "value": 12, "buff": 1, "desc": "祈りなき守護", "log": "生ける聖鎧は祈りなき守護で身を固め、攻撃力を上げた。"}
+		_: return _attack_action(22, "断罪の大槌 22")
+
+static func _chancellor_action(turn: int) -> Dictionary:
+	match turn % 5:
+		1: return {"type": "apply_status", "status": "weak", "amount": 2, "desc": "冷たい視線", "log": "宰相は冷たい視線で力を削いだ。"}
+		2: return {"type": "add_temp_discard", "card_id": "pressure", "amount": 1, "desc": "王命の一筆", "log": "宰相は王命の一筆で重圧を捨て札に混ぜた。"}
+		3: return {"type": "apply_status", "status": "vulnerable", "amount": 1, "desc": "黒い密約", "log": "宰相は黒い密約で隙を作った。"}
+		4: return {"type": "attack_status", "value": 6, "status": "weak", "amount": 1, "desc": "毒の言葉", "log": "宰相は毒の言葉を投げかけた。"}
+		_: return {"type": "block", "value": 12, "desc": "保身の策"}
 
 static func _default_enemy_action(turn: int) -> Dictionary:
 	match turn % 3:

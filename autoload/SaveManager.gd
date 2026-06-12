@@ -42,6 +42,7 @@ func load_run() -> bool:
 	GameState.player_hp = clampi(int(data["player_hp"]), 1, GameState.player_max_hp)
 	GameState.deck = (data["deck"] as Array).duplicate(true)
 	GameState.current_act = int(data["current_act"])
+	GameState.apply_act_map()
 	GameState.owned_relic_ids = (data["owned_relic_ids"] as Array).duplicate()
 	GameState.initial_relic_chosen = bool(data["initial_relic_chosen"])
 	GameState.relic_choice_done = bool(data["relic_choice_done"])
@@ -91,7 +92,9 @@ func _is_valid_run_data(data) -> bool:
 		return false
 	if int(data["player_hp"]) <= 0:
 		return false
-	if not GameState.MAP_NODES.has(String(data["map_current_node_id"])):
+	# 保存された幕のマップに対してノードIDを検証する
+	var act_map: Dictionary = GameState.get_map_nodes_for_act(int(data["current_act"]))
+	if not act_map.has(String(data["map_current_node_id"])):
 		return false
 	return true
 

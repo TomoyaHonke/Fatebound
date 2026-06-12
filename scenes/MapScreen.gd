@@ -78,7 +78,7 @@ func _process(delta: float) -> void:
 # ─── UI construction ──────────────────────────────────────────────────────────
 
 func _build_ui() -> void:
-	var map_bg_key := "act2_map" if GameState.current_act == 2 else "act1_map"
+	var map_bg_key := "act%d_map" % GameState.current_act if GameState.current_act >= 1 and GameState.current_act <= 3 else "act1_map"
 	_add_background(map_bg_key, Color(0, 0, 0, 0.36))
 	_build_graph_viewport()
 

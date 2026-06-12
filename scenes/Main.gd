@@ -13,19 +13,19 @@ const MENU_WIDTH = 248.0
 const STORY_PAGES := [
 	{
 		"image": "res://assets/backgrounds/story/story_01_hero_party.png",
-		"text": "かつて、勇者一行には■■■という仲間がいた。"
+		"text": "かつて、勇者の隣にはもうひとりの剣があった。\n名もなき従者──誰よりも長く、誰よりも近くで一行を支えた影。"
 	},
 	{
 		"image": "res://assets/backgrounds/story/story_02_betrayal.png",
-		"text": "最後の戦いの果てに、■■■は仲間たちに裏切られ、奈落へ落とされた。"
+		"text": "魔王が堕ちた夜。栄光の分け前は、五人には多すぎた。\n「お前は、いなかったことにしよう」──影は奈落へ落とされた。"
 	},
 	{
 		"image": "res://assets/backgrounds/story/story_03_fallen_angel_contract.png",
-		"text": "死の淵で、■■■に手を差し伸べたのは堕天使だった。"
+		"text": "死の淵で、堕天使が囁いた。「復讐を望むなら、死は取り上げよう」\n契約の焼印が胸に灼きつく。以来、影は死ぬことを許されていない。"
 	},
 	{
 		"image": "res://assets/backgrounds/story/story_04_return_to_capital.png",
-		"text": "奪われた名を取り戻すため、■■■は復讐者として王都へ戻る。"
+		"text": "何度倒れても、奈落が引き戻し、また歩かせる。\n影は復讐者として、光の都へ戻る。──全員の名を、消すために。"
 	},
 ]
 
