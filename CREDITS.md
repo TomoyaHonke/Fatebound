@@ -37,7 +37,8 @@ abyss_core (lorc/floating-crystal), chain_of_judgement (lorc/crossed-chains),
 fate_severing_thread (lorc/swirl-string), former_hunter_bow (lorc/pocket-bow),
 hunter_tracking_eye (lorc/beast-eye), hunter_trapwire (lorc/wolf-trap),
 false_holy_seal (lorc/spiked-halo), deceit_chalice (lorc/chalice-drops),
-martyr_rosary (lorc/gem-necklace).
+martyr_rosary (lorc/gem-necklace), unyielding_white_shield (lorc/crenulated-shield),
+shield_thorns (delapouite/spiked-shield), knight_oath (lorc/shield-reflect).
 
 Icons were recolored and composited into the game's card frames; the underlying
 artwork is unmodified. Source icon for each card:

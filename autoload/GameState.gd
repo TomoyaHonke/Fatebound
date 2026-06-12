@@ -414,6 +414,27 @@ const RELICS: Dictionary = {
 		"description_jp": "各戦闘開始時、敵に脆弱を2付与する。\n足跡、息遣い、血の匂い。見失わないための眼だけが残った。",
 		"rarity": "boss", "icon_text": "眼"
 	},
+	"unyielding_white_shield": {
+		"id": "unyielding_white_shield", "name_jp": "不抜の白盾",
+		"effect_jp": "ターン開始時にブロックが消えず、10まで持ち越せる。",
+		"memory_jp": "彼の盾が下がるのを、見た者はいない。",
+		"description_jp": "ターン開始時にブロックが消えず、10まで持ち越せる。\n彼の盾が下がるのを、見た者はいない。",
+		"rarity": "boss", "icon_text": "盾"
+	},
+	"shield_thorns": {
+		"id": "shield_thorns", "name_jp": "盾の棘",
+		"effect_jp": "敵の攻撃でダメージを受けたとき、敵に3ダメージを返す。",
+		"memory_jp": "壁に挑んだ者は、皆その棘を知った。",
+		"description_jp": "敵の攻撃でダメージを受けたとき、敵に3ダメージを返す。\n壁に挑んだ者は、皆その棘を知った。",
+		"rarity": "boss", "icon_text": "棘"
+	},
+	"knight_oath": {
+		"id": "knight_oath", "name_jp": "騎士の誓い",
+		"effect_jp": "ターン終了時、残ったエナジー1につきブロックを3得る。",
+		"memory_jp": "力より忍耐を。攻めるより、立ち続けることを。",
+		"description_jp": "ターン終了時、残ったエナジー1につきブロックを3得る。\n力より忍耐を。攻めるより、立ち続けることを。",
+		"rarity": "boss", "icon_text": "誓"
+	},
 	"false_holy_seal": {
 		"id": "false_holy_seal", "name_jp": "偽りの聖印",
 		"effect_jp": "エナジー上限が1増える。ただし休憩での回復量が半分になる。",

@@ -12,6 +12,8 @@ const RELIC_REWARD_SCENE       = "res://scenes/ui/RelicRewardScreen.tscn"
 const BOSS_RELIC_REWARD_SCENE  = "res://scenes/ui/BossRelicRewardScreen.tscn"
 const ACT2_BOSS_RELIC_REWARD_BACKGROUND = "res://assets/backgrounds/act2/act2_boss_relic_reward_fallen_saint.png"
 const ACT2_BOSS_RELIC_IDS = ["false_holy_seal", "deceit_chalice", "martyr_rosary"]
+const KNIGHT_RELIC_IDS = ["unyielding_white_shield", "shield_thorns", "knight_oath"]
+const KNIGHT_RELIC_REWARD_BACKGROUND = "res://assets/backgrounds/act3/act3_battle_great_hall.png"
 
 # ── Split-out modules ─────────────────────────────────────────────────────────
 const EnemyAI       = preload("res://scenes/combat/EnemyAI.gd")
@@ -92,6 +94,7 @@ var _player_turn:  bool = true
 var _busy:         bool = false  # while animating / enemy acting
 var _battle_turn:  int = 0
 var _was_elite:    bool = false
+var _is_gate_midboss: bool = false  # 関門の中ボス(専用レリック報酬)
 
 # ── UI nodes ─────────────────────────────────────────────────────────────────
 var _bg:              ColorRect
@@ -810,9 +813,10 @@ func _start_battle() -> void:
 
 	var is_boss = _enemy_data.get("is_boss", false) or GameState.map_encounter_is_boss
 	var node_type = GameState.MAP_NODES.get(GameState.map_current_node_id, {}).get("type", "normal_battle")
-	# 中ボス(接続先のあるボスノード)は強敵扱いでレリック報酬も出す
+	# 中ボス(接続先のあるボスノード)は専用レリック報酬を出す
 	var node_conns: Array = GameState.MAP_NODES.get(GameState.map_current_node_id, {}).get("connections", [])
-	_was_elite = (node_type == "elite_battle") or (node_type == "boss" and not node_conns.is_empty())
+	_is_gate_midboss = (node_type == "boss" and not node_conns.is_empty())
+	_was_elite = (node_type == "elite_battle")
 
 	# Boss background tint
 	if is_boss:
@@ -868,8 +872,12 @@ func _start_player_turn() -> void:
 	GameState.player_energy = GameState.player_max_energy
 
 	# ターン1以外はブロックをリセット（ターン1は戦闘開始時レリック効果を保持）
+	# 不抜の白盾: ブロックを10まで持ち越せる
 	if _battle_turn > 1:
-		GameState.player_block = 0
+		if GameState.has_relic("unyielding_white_shield"):
+			GameState.player_block = mini(GameState.player_block, 10)
+		else:
+			GameState.player_block = 0
 
 	# Turn-start relic energy bonus
 	var energy_bonus = GameState.get_turn_energy_bonus(_battle_turn)
@@ -1319,6 +1327,14 @@ func _on_end_turn() -> void:
 	_busy = true
 	_end_turn_btn.disabled = true
 
+	# 騎士の誓い: 残ったエナジー1につきブロック3
+	if GameState.has_relic("knight_oath") and GameState.player_energy > 0:
+		var oath_block = GameState.player_energy * 3
+		GameState.apply_block(oath_block)
+		_play_player_block_effect()
+		_log("騎士の誓い: ブロック+%d。" % oath_block)
+		_update_hud()
+
 	GameState.trigger_temporary_cards_on_turn_end()
 	_flush_combat_damage_events()
 	_flush_combat_log_messages()
@@ -1505,7 +1521,8 @@ func _enemy_attack_animation(damage: int) -> void:
 	t.tween_property(_enemy_node, "position:x", start_x, 0.24)
 	t.tween_interval(0.25)
 	t.tween_callback(func():
-		if GameState.player_hp > 0:
+		# 棘などで敵が攻撃中に倒れた場合は died シグナル側に任せる
+		if GameState.player_hp > 0 and _enemy_node and _enemy_node.current_hp > 0:
 			_end_enemy_turn()
 	)
 
@@ -1520,6 +1537,8 @@ func _enemy_multi_attack_animation(damage: int, times: int) -> void:
 		t.tween_property(_enemy_node, "position:x", start_x - 80, 0.12) \
 			.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
 		t.tween_callback(func():
+			if _enemy_node == null or _enemy_node.current_hp <= 0:
+				return  # 棘などで攻撃中に倒れた
 			_play_attack_impact(5.0, 0.32)
 			_damage_player_with_effect(damage, Vector2(0, -154 - randf_range(0, 30)))
 		)
@@ -1530,7 +1549,7 @@ func _enemy_multi_attack_animation(damage: int, times: int) -> void:
 	t.tween_callback(func():
 		if GameState.player_hp <= 0:
 			_on_player_died()
-		else:
+		elif _enemy_node and _enemy_node.current_hp > 0:
 			_end_enemy_turn()
 	)
 
@@ -1675,7 +1694,9 @@ func _after_enemy_died() -> void:
 		_reward_screen.show_reward(options)
 
 func _on_reward_chosen() -> void:
-	if _was_elite:
+	if _is_gate_midboss:
+		_boss_relic_reward.show_reward(KNIGHT_RELIC_IDS, KNIGHT_RELIC_REWARD_BACKGROUND)
+	elif _was_elite:
 		_show_relic_reward()
 	else:
 		_go_to_map()
@@ -1700,7 +1721,10 @@ func _show_boss_relic_reward() -> void:
 		_boss_relic_reward.show_reward()
 
 func _on_boss_relic_reward_chosen(_relic_id: String) -> void:
-	_advance_after_boss_relic()
+	if _is_gate_midboss:
+		_go_to_map()
+	else:
+		_advance_after_boss_relic()
 
 func _advance_after_boss_relic() -> void:
 	if GameState.current_act == 1:
@@ -1761,6 +1785,10 @@ func _log(text: String) -> void:
 func _damage_player_with_effect(raw_damage: int, number_offset: Vector2 = Vector2(0, -154)) -> int:
 	var actual = GameState.take_damage(raw_damage)
 	_play_player_damage_feedback(actual, number_offset)
+	# 盾の棘: 攻撃でダメージを受けたら敵に3ダメージ返す
+	if actual > 0 and GameState.has_relic("shield_thorns") and _enemy_node and _enemy_node.current_hp > 0:
+		var dealt = _enemy_node.take_damage(3)
+		_show_damage_number(dealt, _enemy_node.position + Vector2(-30, -160), Color(1.0, 0.75, 0.35))
 	return actual
 
 func _play_player_damage_feedback(actual_damage: int, number_offset: Vector2 = Vector2(0, -154)) -> void:
