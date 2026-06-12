@@ -8,8 +8,18 @@ const C_BG   = Color(0.018, 0.014, 0.026)
 const C_GOLD = Color(0.86, 0.72, 0.34)
 const C_TEXT = Color(0.84, 0.78, 0.96)
 
+# 幕ごとのイベントプール。袋方式(GameState.event_bag)で1ラン内の重複を避ける。
+# 背景は assets/backgrounds/events/<id>.png があれば自動で使う(無ければ共通背景)。
+const EVENT_POOLS: Dictionary = {
+	"common": ["altar", "soldier_book", "tainted_water", "sealed_coffin", "shadow_pact"],
+	"act1": ["ruined_forge", "forgotten_graves", "quiet_camp"],
+	"act2": ["wanted_poster", "back_alley_bar", "confession_booth"],
+	"act3": ["five_portraits", "kings_cellar", "shadow_pact_final"],
+}
+
 const EVENTS: Array = [
 	{
+		"id": "altar",
 		"title": "薄暗い祭壇",
 		"desc": "薄暗い石の祭壇が脈打っている。触れれば、何かを捧げる代わりに力を得られそうだ。",
 		"choices": [
@@ -19,6 +29,7 @@ const EVENTS: Array = [
 		]
 	},
 	{
+		"id": "soldier_book",
 		"title": "倒れた兵士と書物",
 		"desc": "倒れた兵士のそばに、血で汚れた戦術書が落ちている。まだ読めそうだ。",
 		"choices": [
@@ -28,6 +39,7 @@ const EVENTS: Array = [
 		]
 	},
 	{
+		"id": "shadow_pact",
 		"title": "影の契約",
 		"desc": "足元の影が揺れ、声が聞こえる。「守りが欲しいなら、痛みを差し出せ。」",
 		"choices": [
@@ -37,8 +49,9 @@ const EVENTS: Array = [
 		]
 	},
 	{
+		"id": "ruined_forge",
 		"title": "朽ちた鍛冶場",
-		"desc": "廃墟の奥に、まだ熱を残した鍛冶場がある。錆びた道具でも、使えないことはなさそうだ。",
+		"desc": "廃墟の奥に、まだ熱を残した鍛冶場がある。──見覚えがある。あの頃、五人分の剣をここで打ち直した。",
 		"choices": [
 			{"label": "鍛える", "description": "HP -6 / カードを1枚強化", "effect": "forge_upgrade", "result": "道具の火花がカードに宿った。"},
 			{"label": "無理に使う", "description": "HP -6 / カードを2枚強化", "effect": "forge_double_upgrade", "result": "無理を押し通し、2枚のカードを鍛え上げた。"},
@@ -46,6 +59,7 @@ const EVENTS: Array = [
 		]
 	},
 	{
+		"id": "forgotten_graves",
 		"title": "忘れられた墓標",
 		"desc": "名もなき墓標が並んでいる。ひとつだけ、あなたの名を刻むための空白がある。",
 		"choices": [
@@ -55,6 +69,7 @@ const EVENTS: Array = [
 		]
 	},
 	{
+		"id": "tainted_water",
 		"title": "汚れた聖水",
 		"desc": "割れた器に、黒く濁った水が残っている。飲めば体は癒えるが、何かを失う気がする。",
 		"choices": [
@@ -64,12 +79,83 @@ const EVENTS: Array = [
 		]
 	},
 	{
+		"id": "sealed_coffin",
 		"title": "封印された棺",
 		"desc": "黒い鎖で封じられた棺がある。中から、微かな鼓動が聞こえる。",
 		"choices": [
 			{"label": "開ける", "description": "ランダムなレリックを得る / 呪いカードが加わる", "effect": "coffin_open", "result": "棺の封印は破られ、遺物と呪いが手に入った。"},
 			{"label": "鎖を壊す", "description": "HP -12 / ランダムなカードを1枚獲得", "effect": "coffin_break", "result": "鎖を砕き、奥から何かを引き出した。"},
 			{"label": "立ち去る", "description": "何もしない", "effect": "none", "result": "あなたは棺を残したまま進んだ。"},
+		]
+	},
+	{
+		"id": "quiet_camp",
+		"title": "静かな野営跡",
+		"desc": "焚き火の跡が残る窪地。──見覚えがある。五人で星を数えた、最初の夜の場所だ。",
+		"choices": [
+			{"label": "火を熾して休む", "description": "HP +12", "effect": "camp_rest", "result": "ひとりの火は小さい。それでも、温かかった。"},
+			{"label": "灰を漁る", "description": "ランダムなカードを1枚獲得", "effect": "camp_scavenge", "result": "灰の中に、置き忘れられたものがあった。"},
+			{"label": "立ち去る", "description": "何もしない", "effect": "none", "result": "思い出は、灰の中に置いていく。"},
+		]
+	},
+	{
+		"id": "wanted_poster",
+		"title": "自分の手配書",
+		"desc": "壁に古びた手配書が貼られている。「名もなき裏切り者」──描かれた顔は、間違いなくあなただ。",
+		"choices": [
+			{"label": "破り捨てる", "description": "カードを1枚削除", "effect": "wanted_remove", "result": "紙切れひとつ。けれど、少しだけ軽くなった。"},
+			{"label": "見つめる", "description": "最大HP +4", "effect": "wanted_resolve", "result": "もう、誰の物語でもない。自分の足で立つ。"},
+			{"label": "立ち去る", "description": "何もしない", "effect": "none", "result": "風が手配書を揺らしていた。"},
+		]
+	},
+	{
+		"id": "back_alley_bar",
+		"title": "裏路地の酒場",
+		"desc": "扉の隙間から灯りと喧噪が漏れる。カウンターの奥の老主人は、あなたの顔を見ても何も言わなかった。",
+		"choices": [
+			{"label": "酒を呑む", "description": "HP +12", "effect": "bar_drink", "result": "安酒が喉を焼く。生きている味がした。"},
+			{"label": "噂を集める", "description": "カードを1枚強化", "effect": "bar_rumor", "result": "酔客の噂話に、王宮の弱みが混ざっていた。"},
+			{"label": "昔を語る", "description": "HP -5 / ランダムなレリックを得る", "effect": "bar_memory", "result": "語り終えると、老主人は黙って何かを差し出した。"},
+		]
+	},
+	{
+		"id": "confession_booth",
+		"title": "教会の懺悔室",
+		"desc": "誰もいない懺悔室。仕切りの向こうは暗い。それでも、何かが聞いている気がする。",
+		"choices": [
+			{"label": "懺悔する", "description": "呪いカードをすべて削除 / HP +5", "effect": "confess", "result": "誰も赦しはしない。それでも、重荷は下りた。"},
+			{"label": "沈黙を破る", "description": "HP -8 / カードを2枚強化", "effect": "confess_threaten", "result": "「赦しはいらない。力をよこせ。」暗がりは、応えた。"},
+			{"label": "黙って出る", "description": "何もしない", "effect": "none", "result": "懺悔する罪は、まだ終わっていない。"},
+		]
+	},
+	{
+		"id": "five_portraits",
+		"title": "五人の肖像画",
+		"desc": "回廊に勇者一行の肖像画が飾られている。五人目の場所だけ、黒く塗り潰されている。",
+		"choices": [
+			{"label": "切り裂く", "description": "HP -8 / カードを2枚強化", "effect": "portrait_slash", "result": "布の裂ける音が、回廊に長く響いた。"},
+			{"label": "見つめる", "description": "最大HP +5", "effect": "portrait_accept", "result": "塗り潰されたのは絵だけだ。お前は、ここにいる。"},
+			{"label": "通り過ぎる", "description": "何もしない", "effect": "none", "result": "絵の中の四人は、笑ったままだった。"},
+		]
+	},
+	{
+		"id": "kings_cellar",
+		"title": "王の酒蔵",
+		"desc": "祝勝の夜に開けられたものと同じ酒が眠っている。──あの夜、あなたの杯にだけ、何かが混ぜられていた。",
+		"choices": [
+			{"label": "呑み干す", "description": "HP全回復 / 「強欲の代償」がデッキに混ざる", "effect": "cellar_drink", "result": "うまい。だからこそ、許せない。"},
+			{"label": "瓶を叩き割る", "description": "ランダムなカードを1枚獲得", "effect": "cellar_smash", "result": "砕けた瓶の奥に、隠されていたものが見えた。"},
+			{"label": "触れない", "description": "何もしない", "effect": "none", "result": "酒の香りだけが、あの夜を覚えている。"},
+		]
+	},
+	{
+		"id": "shadow_pact_final",
+		"title": "影の契約・終章",
+		"desc": "玉座の間が近い。影が囁く。「最後の名を消す前に──すべてを差し出す覚悟はあるか。」",
+		"choices": [
+			{"label": "すべてを差し出す", "description": "最大HP -7 / エピックレリックを得る", "effect": "pact_final_give", "result": "影は満足げに揺れた。身体の芯が、少し軽くなった気がした。"},
+			{"label": "真意を問う", "description": "HP +5", "effect": "pact_final_ask", "result": "影は笑った。「復讐が終わった後のお前を、見てみたいだけだ。」"},
+			{"label": "拒む", "description": "何もしない", "effect": "none", "result": "「……いいだろう。その意地ごと、見届けてやる。」"},
 		]
 	},
 ]
@@ -93,8 +179,24 @@ func _ready() -> void:
 	_apply_screen_scale()
 	_card_scene = load(CARD_SCENE)
 	GameState.complete_map_node(GameState.map_current_node_id)
-	_current_event = EVENTS[randi() % EVENTS.size()]
+	_current_event = _draw_event()
 	_build_ui()
+
+## 現在の幕のプール(共通+act専用)から袋方式で1つ引く
+func _draw_event() -> Dictionary:
+	var act = clampi(GameState.current_act, 1, 3)
+	var pool: Array = []
+	pool.append_array(EVENT_POOLS["common"])
+	pool.append_array(EVENT_POOLS.get("act%d" % act, []))
+	if GameState.event_bag.is_empty():
+		var refill: Array = pool.duplicate()
+		refill.shuffle()
+		GameState.event_bag.assign(refill)
+	var event_id: String = GameState.event_bag.pop_back()
+	for event in EVENTS:
+		if event.get("id", "") == event_id:
+			return event
+	return EVENTS[randi() % EVENTS.size()]
 
 func _apply_screen_scale() -> void:
 	var scaler = get_node_or_null("/root/ScreenScale")
@@ -103,7 +205,12 @@ func _apply_screen_scale() -> void:
 
 
 func _build_ui() -> void:
-	_add_background("shared_event")
+	# イベント専用背景があれば使う(assets/backgrounds/events/<id>.png)
+	var custom_bg = "res://assets/backgrounds/events/%s.png" % _current_event.get("id", "")
+	if GameState.load_background_texture(custom_bg) != null:
+		_add_background_path(custom_bg)
+	else:
+		_add_background("shared_event")
 
 	var canvas = _AtmosphereCanvas.new()
 	add_child(canvas)
@@ -251,12 +358,63 @@ func _on_choice(choice: Dictionary) -> void:
 				GameState.add_relic(open_relic_id)
 			var curse_card = GameState.create_status_card("brand_of_sin")
 			curse_card["name"] = "呪われた鎖"
-			curse_card["description"] = "使用できない。\n手札に残るとHPを2失う。"
+			curse_card["description"] = "使用できない。\n手札に残るとHPを2失う。\n休憩で除去できる。"
+			curse_card["temporary"] = false  # デッキに残る永続呪い(休憩・懺悔で除去可)
 			GameState.deck.append(curse_card)
 			_finish_event(choice.get("result", ""))
 		"coffin_break":
 			GameState.player_hp = maxi(1, GameState.player_hp - 12)
 			_grant_random_card()
+			_finish_event(choice.get("result", ""))
+		"camp_rest", "bar_drink":
+			GameState.heal(12)
+			_finish_event(choice.get("result", ""))
+		"camp_scavenge", "cellar_smash":
+			_grant_random_card()
+			_finish_event(choice.get("result", ""))
+		"wanted_remove":
+			_begin_card_selection("remove", 1, choice.get("result", ""), "削除するカードを選択")
+		"wanted_resolve":
+			GameState.player_max_hp += 4
+			GameState.player_hp += 4
+			_finish_event(choice.get("result", ""))
+		"bar_rumor":
+			_begin_card_selection("upgrade", 1, choice.get("result", ""), "強化するカードを選択")
+		"bar_memory":
+			GameState.player_hp = maxi(1, GameState.player_hp - 5)
+			var bar_relic_id = GameState.roll_relic_reward("normal")
+			if not bar_relic_id.is_empty():
+				GameState.add_relic(bar_relic_id)
+			_finish_event(choice.get("result", ""))
+		"confess":
+			var removed = GameState.remove_curse_cards_from_deck()
+			GameState.heal(5)
+			var confess_text = choice.get("result", "")
+			if removed > 0:
+				confess_text += "(呪い%d枚を除去)" % removed
+			_finish_event(confess_text)
+		"confess_threaten", "portrait_slash":
+			GameState.player_hp = maxi(1, GameState.player_hp - 8)
+			_begin_card_selection("upgrade", 2, choice.get("result", ""), "強化するカードを選択")
+		"portrait_accept":
+			GameState.player_max_hp += 5
+			GameState.player_hp += 5
+			_finish_event(choice.get("result", ""))
+		"cellar_drink":
+			GameState.heal(GameState.player_max_hp)
+			GameState.add_card_to_deck("greed_price")
+			_finish_event(choice.get("result", ""))
+		"pact_final_give":
+			GameState.player_max_hp = maxi(10, GameState.player_max_hp - 7)
+			GameState.player_hp = mini(GameState.player_hp, GameState.player_max_hp)
+			var pact_relic_id = GameState.roll_relic_reward_of_rarity("epic")
+			if pact_relic_id.is_empty():
+				pact_relic_id = GameState.roll_relic_reward("elite")
+			if not pact_relic_id.is_empty():
+				GameState.add_relic(pact_relic_id)
+			_finish_event(choice.get("result", ""))
+		"pact_final_ask":
+			GameState.heal(5)
 			_finish_event(choice.get("result", ""))
 		_:
 			_finish_event(choice.get("result", ""))
@@ -366,6 +524,22 @@ func _choice_blocked_text(choice: Dictionary) -> String:
 			return "得られるレリックがない" if GameState.roll_relic_reward("normal").is_empty() else ""
 		"coffin_break":
 			return "HPが足りない" if GameState.player_hp <= 12 else ""
+		"wanted_remove":
+			return "削除対象なし" if GameState.get_removable_deck_indices().is_empty() else ""
+		"bar_rumor":
+			return "強化対象なし" if GameState.get_upgradeable_deck_indices().is_empty() else ""
+		"bar_memory":
+			if GameState.player_hp <= 5:
+				return "HPが足りない"
+			return "得られるレリックがない" if GameState.roll_relic_reward("normal").is_empty() else ""
+		"confess":
+			return "呪いを抱えていない" if GameState.count_curse_cards_in_deck() == 0 else ""
+		"confess_threaten", "portrait_slash":
+			if GameState.player_hp <= 8:
+				return "HPが足りない"
+			return "強化対象なし" if GameState.get_upgradeable_deck_indices().is_empty() else ""
+		"pact_final_give":
+			return "最大HPが低すぎる" if GameState.player_max_hp <= 17 else ""
 		_:
 			return ""
 
@@ -480,6 +654,9 @@ func _make_choice_panel(choice: Dictionary, blocked_text: String) -> PanelContai
 
 
 func _add_background(background_key: String) -> void:
+	_add_background_path(GameState.get_background_path(background_key))
+
+func _add_background_path(path: String) -> void:
 	var bg = TextureRect.new()
 	bg.name = "EventBackground"
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -490,7 +667,7 @@ func _add_background(background_key: String) -> void:
 	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bg.texture = GameState.load_background_texture(GameState.get_background_path(background_key))
+	bg.texture = GameState.load_background_texture(path)
 	if bg.texture == null:
 		bg.modulate = C_BG
 	add_child(bg)

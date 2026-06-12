@@ -29,6 +29,7 @@ func save_run() -> void:
 		# 任意キー(旧セーブには無くても良い)
 		"enemy_bag_normal": GameState.enemy_bag_normal.duplicate(),
 		"enemy_bag_elite": GameState.enemy_bag_elite.duplicate(),
+		"event_bag": GameState.event_bag.duplicate(),
 	}
 	_write_variant(RUN_SAVE_PATH, data)
 
@@ -59,6 +60,7 @@ func load_run() -> bool:
 	GameState.last_enemy_id = String(data["last_enemy_id"])
 	GameState.enemy_bag_normal = (data.get("enemy_bag_normal", []) as Array).duplicate()
 	GameState.enemy_bag_elite = (data.get("enemy_bag_elite", []) as Array).duplicate()
+	GameState.event_bag = (data.get("event_bag", []) as Array).duplicate()
 	# 戦闘スコープの状態はクリーンに戻す
 	GameState.player_block = 0
 	GameState.player_energy = GameState.player_max_energy

@@ -38,6 +38,8 @@ var last_enemy_id: String = ""
 # 敵抽選の袋(幕ごとにリセット。引き切るまで同じ敵は出ない)
 var enemy_bag_normal: Array = []
 var enemy_bag_elite: Array = []
+# イベント抽選の袋(幕ごとにリセット)
+var event_bag: Array = []
 var first_attack_used_this_combat: bool = false
 
 # ── Enemy debug ───────────────────────────────────────────────────────────────
@@ -1380,6 +1382,24 @@ func can_remove_card(card_ref) -> bool:
 		return false
 	return true
 
+## デッキ内の永続呪いカードをすべて削除し、削除枚数を返す
+func remove_curse_cards_from_deck() -> int:
+	var removed := 0
+	for i in range(deck.size() - 1, -1, -1):
+		var card = get_card(deck[i])
+		if card.get("type", "") == "curse" and not card.get("temporary", false):
+			deck.remove_at(i)
+			removed += 1
+	return removed
+
+func count_curse_cards_in_deck() -> int:
+	var count := 0
+	for card_ref in deck:
+		var card = get_card(card_ref)
+		if card.get("type", "") == "curse" and not card.get("temporary", false):
+			count += 1
+	return count
+
 func remove_deck_card(index: int) -> bool:
 	if deck.size() <= 1:
 		return false
@@ -1553,7 +1573,8 @@ func _trigger_temporary_card_on_turn_end(card_ref) -> void:
 		_queue_player_damage_event(actual_greed, "greed_price")
 		_queue_combat_log("強欲の代償。HPを2失った。")
 		return
-	if not is_temporary_card(card_ref):
+	# 一時カード/デッキに混ざった呪い(辞書型)が対象。デッキの通常カード(文字列ID)は対象外
+	if not (card_ref is Dictionary):
 		return
 	match card_id:
 		"brand_of_sin":
@@ -1672,6 +1693,7 @@ func _draw_from_enemy_bag(pool_key: String) -> String:
 func reset_enemy_bags() -> void:
 	enemy_bag_normal.clear()
 	enemy_bag_elite.clear()
+	event_bag.clear()
 
 func get_map_node_floor(node_id: String) -> int:
 	var node: Dictionary = MAP_NODES.get(node_id, {})
