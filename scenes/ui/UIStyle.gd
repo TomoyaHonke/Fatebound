@@ -41,9 +41,10 @@ static func style_button(btn: Button, corner: float = 5.0, with_frame: bool = fa
 		btn.add_child(frame)
 
 ## 暗い台座+ブロンズ装飾フレームのパネルスタイルを適用する。
-static func style_panel(panel: Panel, frame_alpha: float = 0.70) -> void:
+## bg_alpha を下げると背景アートを透かせられる。
+static func style_panel(panel: Panel, frame_alpha: float = 0.70, bg_alpha: float = 0.90) -> void:
 	var ps = StyleBoxFlat.new()
-	ps.bg_color = Color(0.030, 0.026, 0.058, 0.90)
+	ps.bg_color = Color(0.030, 0.026, 0.058, bg_alpha)
 	ps.set_border_width_all(0)
 	ps.set_corner_radius_all(2)
 	panel.add_theme_stylebox_override("panel", ps)

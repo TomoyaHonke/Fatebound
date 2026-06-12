@@ -174,10 +174,11 @@ func _build_ui() -> void:
 	panel.add_child(_result_label)
 
 	# Choices
+	# 選択肢は画面下部に寄せて、中央の背景アートを見せる
 	_choice_container = VBoxContainer.new()
-	_choice_container.position = Vector2(120, 210)
-	_choice_container.size = Vector2(400, 320)
-	_choice_container.add_theme_constant_override("separation", 14)
+	_choice_container.position = Vector2(120, 340)
+	_choice_container.size = Vector2(400, 280)
+	_choice_container.add_theme_constant_override("separation", 12)
 	panel.add_child(_choice_container)
 
 	var choices: Array = _current_event.get("choices", [])
@@ -185,7 +186,7 @@ func _build_ui() -> void:
 		_choice_container.add_child(_make_choice_panel(choice, _choice_blocked_text(choice)))
 
 	# Continue button (hidden until choice made)
-	_continue_btn = _make_action_btn("マップに戻る", Vector2(640, 530))
+	_continue_btn = _make_action_btn("マップに戻る", Vector2(640, 668))
 	_continue_btn.visible = false
 	_continue_btn.pressed.connect(_on_continue)
 	add_child(_continue_btn)

@@ -48,7 +48,8 @@ func _build_ui() -> void:
 	var panel = _panel
 	panel.position = Vector2(360, 96)
 	panel.size = Vector2(560, 500)
-	preload("res://scenes/ui/UIStyle.gd").style_panel(panel, 0.78)
+	# 背景の焚き火が透けて見えるように半透明にする
+	preload("res://scenes/ui/UIStyle.gd").style_panel(panel, 0.78, 0.40)
 	add_child(panel)
 
 	var header = Label.new()
