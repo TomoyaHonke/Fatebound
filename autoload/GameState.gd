@@ -414,6 +414,20 @@ const RELICS: Dictionary = {
 		"description_jp": "各戦闘開始時、敵に脆弱を2付与する。\n足跡、息遣い、血の匂い。見失わないための眼だけが残った。",
 		"rarity": "boss", "icon_text": "眼"
 	},
+	"hungry_blade": {
+		"id": "hungry_blade", "name_jp": "飢えた魔剣",
+		"effect_jp": "攻撃カードのダメージが3増える。戦闘終了時にHPを2失う。",
+		"memory_jp": "刃が血を覚えてしまった。もう、ただの鉄には戻れない。",
+		"description_jp": "攻撃カードのダメージが3増える。戦闘終了時にHPを2失う。\n刃が血を覚えてしまった。もう、ただの鉄には戻れない。",
+		"rarity": "rare", "icon_text": "剣"
+	},
+	"leaden_heart": {
+		"id": "leaden_heart", "name_jp": "鈍色の心臓",
+		"effect_jp": "最大HPが15増える。ただしカード報酬の選択肢が1枚減る。",
+		"memory_jp": "重い。だが、止まらない。",
+		"description_jp": "最大HPが15増える。ただしカード報酬の選択肢が1枚減る。\n重い。だが、止まらない。",
+		"rarity": "epic", "icon_text": "心"
+	},
 	"serpent_fang": {
 		"id": "serpent_fang", "name_jp": "蛇の牙",
 		"effect_jp": "敵に毒を付与するたび、追加で毒を1付与する。",
@@ -479,10 +493,10 @@ const CARD_RARITY_WEIGHTS: Dictionary = {
 	"epic": 3,
 }
 const CARD_REWARD_POOL: Array = [
-	"rusted_combo", "corroding_blade", "corrosive_mist", "deep_wound", "parry", "brace", "mark_of_hatred", "abyss_breath",
+	"rusted_combo", "corroding_blade", "corrosive_mist", "end_of_pain", "parry", "brace", "mark_of_hatred", "borrowed_life",
 	"revenge_blade", "condemnation", "blood_pursuit", "pain_to_power", "fallen_grace", "pact_price",
-	"unforgiven", "headsman", "slow_death", "abyss_reversal", "oathbreaker", "fallen_wings", "life_reap",
-	"endless_revenge", "abyss_contract", "poison_burst",
+	"unforgiven", "headsman", "slow_death", "blood_price", "abyss_reversal", "oathbreaker", "fallen_wings", "life_reap",
+	"endless_revenge", "abyss_contract", "poison_burst", "abyss_thirst",
 ]
 
 const CARDS: Dictionary = {
@@ -551,12 +565,32 @@ const CARDS: Dictionary = {
 		"type": "attack",
 		"effects": [{"type": "poison_burst", "value": 4}]
 	},
-	"deep_wound": {
-		"id": "deep_wound", "name": "深手", "cost": 2,
-		"description": "敵に15ダメージ。",
-		"rarity": "common",
+	"end_of_pain": {
+		"id": "end_of_pain", "name": "痛みの果て", "cost": 2,
+		"description": "失っているHPが\n20以上なら26ダメージ。\nそうでなければ10ダメージ。",
+		"rarity": "rare",
 		"type": "attack",
-		"effects": [{"type": "damage", "value": 15}]
+		"effects": [{"type": "conditional_damage", "condition": "missing_hp", "threshold": 20, "value": 10, "bonus_value": 26}]
+	},
+	"blood_price": {
+		"id": "blood_price", "name": "血の代償", "cost": 1,
+		"description": "HPを3失う。\n敵に14ダメージ。\n最低HPは1。",
+		"rarity": "rare",
+		"type": "attack",
+		"effects": [
+			{"type": "lose_hp", "value": 3, "minimum_hp": 1},
+			{"type": "damage", "value": 14}
+		]
+	},
+	"abyss_thirst": {
+		"id": "abyss_thirst", "name": "奈落の渇き", "cost": 0,
+		"description": "エナジーを2得る。\n「罪悪感」を\n捨て札に混ぜる。",
+		"rarity": "epic",
+		"type": "skill",
+		"effects": [
+			{"type": "gain_energy", "value": 2},
+			{"type": "self_temp_discard", "card_id": "guilt", "amount": 1}
+		]
 	},
 	"parry": {
 		"id": "parry", "name": "受け流し", "cost": 1,
@@ -582,12 +616,15 @@ const CARDS: Dictionary = {
 		"type": "skill",
 		"effects": [{"type": "apply_status", "target": "enemy", "status": "vulnerable", "amount": 2}]
 	},
-	"abyss_breath": {
-		"id": "abyss_breath", "name": "奈落の息", "cost": 1,
-		"description": "HPを5回復。",
+	"borrowed_life": {
+		"id": "borrowed_life", "name": "命の前借り", "cost": 1,
+		"description": "HPを8回復。\n最大HPが3減る。",
 		"rarity": "common",
 		"type": "skill",
-		"effects": [{"type": "heal", "value": 5}]
+		"effects": [
+			{"type": "heal", "value": 8},
+			{"type": "lose_max_hp", "value": 3}
+		]
 	},
 	"revenge_blade": {
 		"id": "revenge_blade", "name": "復讐の刃", "cost": 1,
@@ -1348,7 +1385,10 @@ func _make_upgraded_description(card: Dictionary) -> String:
 			"vulnerable_bonus_damage":
 				parts.append("敵が脆弱なら追加で\n%dダメージ。" % effect.get("value", 0))
 			"conditional_damage":
-				parts.append("敵のHPが半分以下なら\n%dダメージ。そうでなければ\n%dダメージ。" % [effect.get("bonus_value", effect.get("value", 0)), effect.get("value", 0)])
+				if effect.get("condition", "") == "missing_hp":
+					parts.append("失っているHPが\n%d以上なら%dダメージ。\nそうでなければ%dダメージ。" % [effect.get("threshold", 20), effect.get("bonus_value", effect.get("value", 0)), effect.get("value", 0)])
+				else:
+					parts.append("敵のHPが半分以下なら\n%dダメージ。そうでなければ\n%dダメージ。" % [effect.get("bonus_value", effect.get("value", 0)), effect.get("value", 0)])
 			"block":
 				parts.append("ブロックを%d得る。" % effect.get("value", 0))
 			"heal":
@@ -1368,6 +1408,10 @@ func _make_upgraded_description(card: Dictionary) -> String:
 				parts.append("敵の毒を2倍にする。")
 			"poison_burst":
 				parts.append("敵の毒1につき\n%dダメージを与え、\n毒をすべて消費する。" % effect.get("value", 4))
+			"lose_max_hp":
+				parts.append("最大HPが%d減る。" % effect.get("value", 0))
+			"self_temp_discard":
+				parts.append("「%s」を\n捨て札に混ぜる。" % TEMPORARY_STATUS_CARDS.get(effect.get("card_id", ""), {}).get("name", "お邪魔"))
 	if not minimum_hp_text.is_empty():
 		parts.append(minimum_hp_text)
 	if parts.is_empty():
@@ -1699,6 +1743,9 @@ func add_relic(id: String) -> void:
 		if id == "false_holy_seal":
 			player_max_energy += 1
 			player_energy = player_max_energy
+		elif id == "leaden_heart":
+			player_max_hp += 15
+			player_hp += 15
 
 ## 休憩での回復量(偽りの聖印で半減)
 func get_rest_heal_amount() -> int:
@@ -1776,7 +1823,14 @@ func roll_relic_choices(count: int, context: String = "start") -> Array:
 	return result
 
 func get_attack_damage_bonus(card_type: String = "attack") -> int:
-	return 1 if card_type == "attack" and has_relic("avenger_ring") else 0
+	if card_type != "attack":
+		return 0
+	var bonus := 0
+	if has_relic("avenger_ring"):
+		bonus += 1
+	if has_relic("hungry_blade"):
+		bonus += 3
+	return bonus
 
 func get_enemy_half_hp_attack_damage_bonus(card_type: String, enemy_current_hp: int, enemy_max_hp: int) -> int:
 	if card_type != "attack" or not has_relic("executioner_mask"):
@@ -1804,7 +1858,12 @@ func get_turn_energy_bonus(turn_number: int) -> int:
 	return bonus
 
 func get_card_reward_choice_bonus() -> int:
-	return 1 if has_relic("rotted_crown") else 0
+	var bonus := 0
+	if has_relic("rotted_crown"):
+		bonus += 1
+	if has_relic("leaden_heart"):
+		bonus -= 1
+	return bonus
 
 func modify_card_reward_weights(weights: Dictionary) -> Dictionary:
 	var result = weights.duplicate()

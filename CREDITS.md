@@ -39,7 +39,8 @@ hunter_tracking_eye (lorc/beast-eye), hunter_trapwire (lorc/wolf-trap),
 false_holy_seal (lorc/spiked-halo), deceit_chalice (lorc/chalice-drops),
 martyr_rosary (lorc/gem-necklace), unyielding_white_shield (lorc/crenulated-shield),
 shield_thorns (delapouite/spiked-shield), knight_oath (lorc/shield-reflect),
-serpent_fang (lorc/bestial-fangs).
+serpent_fang (lorc/bestial-fangs), hungry_blade (lorc/relic-blade),
+leaden_heart (lorc/chained-heart).
 
 Icons were recolored and composited into the game's card frames; the underlying
 artwork is unmodified. Source icon for each card:
@@ -54,11 +55,13 @@ artwork is unmodified. Source icon for each card:
 | corrosive_mist 腐食の霧 | lorc/poison-gas |
 | slow_death 緩慢な死 | lorc/hourglass |
 | poison_burst 蝕み爆ぜる | lorc/acid-blob |
-| deep_wound 深手 | lorc/sword-wound |
+| end_of_pain 痛みの果て | lorc/broken-bone |
+| blood_price 血の代償 | lorc/bloody-sword |
+| abyss_thirst 奈落の渇き | lorc/drink-me |
 | parry 受け流し | lorc/sword-clash |
 | brace 身構える | lorc/checked-shield |
 | mark_of_hatred 憎悪の印 | lorc/cursed-star |
-| abyss_breath 奈落の息 | lorc/energy-breath |
+| borrowed_life 命の前借り | lorc/glass-heart |
 | revenge_blade 復讐の刃 | lorc/blade-fall |
 | condemnation 断罪 | lorc/guillotine |
 | blood_pursuit 血濡れの追撃 | lorc/dripping-blade |

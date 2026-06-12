@@ -539,6 +539,7 @@ func _rebuild_energy_dots() -> void:
 		_energy_label.add_theme_font_size_override("font_size", 18 if _energy_label.text.length() >= 5 else 21)
 
 func _update_hud() -> void:
+	_hp_bar.max_value = GameState.player_max_hp
 	_hp_bar.value = GameState.player_hp
 	_hp_label.text = "%d / %d HP" % [GameState.player_hp, GameState.player_max_hp]
 
@@ -1161,7 +1162,10 @@ func _apply_effects(card_data: Dictionary) -> void:
 						_log("契約の焼印でブロック+%d。" % block_bonus)
 			"conditional_damage":
 				var dmg = effect.get("value", 0)
-				if effect.get("condition", "") == "enemy_half_hp" and _enemy_node and _enemy_node.current_hp <= int(_enemy_node.max_hp / 2):
+				var condition = effect.get("condition", "")
+				if condition == "enemy_half_hp" and _enemy_node and _enemy_node.current_hp <= int(_enemy_node.max_hp / 2):
+					dmg = effect.get("bonus_value", dmg)
+				elif condition == "missing_hp" and (GameState.player_max_hp - GameState.player_hp) >= int(effect.get("threshold", 20)):
 					dmg = effect.get("bonus_value", dmg)
 				await _deal_damage_to_enemy_with_effect(_calc_player_damage(dmg + _get_attack_relic_damage_bonus(card_data)))
 			"vulnerable_bonus_damage":
@@ -1188,6 +1192,16 @@ func _apply_effects(card_data: Dictionary) -> void:
 						_log("敵の毒が%dになった。" % (stacks * 2))
 					else:
 						_log("敵は毒を受けていない。")
+			"lose_max_hp":
+				var amount = int(effect.get("value", 0))
+				GameState.player_max_hp = maxi(10, GameState.player_max_hp - amount)
+				GameState.player_hp = mini(GameState.player_hp, GameState.player_max_hp)
+				_log("最大HPが%d減った。" % amount)
+			"self_temp_discard":
+				var temp_id = effect.get("card_id", "")
+				GameState.add_temporary_card_to_discard_pile(temp_id, int(effect.get("amount", 1)))
+				var temp_name = GameState.TEMPORARY_STATUS_CARDS.get(temp_id, {}).get("name", "お邪魔")
+				_log("「%s」が捨て札に混ざった。" % temp_name)
 			"poison_burst":
 				if _enemy_node:
 					var stacks = int(_enemy_node.statuses.get("poison", 0))
@@ -1230,7 +1244,10 @@ func _build_combat_description_segments(card_data: Dictionary) -> Array:
 			"conditional_damage":
 				var base = effect.get("value", 0)
 				var bonus = effect.get("bonus_value", base)
-				lines.append(_damage_line(["半分以下:", "ダメージ"], bonus, _preview_damage(card_data, bonus)))
+				var cond_label = "半分以下:"
+				if effect.get("condition", "") == "missing_hp":
+					cond_label = "失HP%d以上:" % effect.get("threshold", 20)
+				lines.append(_damage_line([cond_label, "ダメージ"], bonus, _preview_damage(card_data, bonus)))
 				lines.append(_damage_line(["通常:", "ダメージ"], base, _preview_damage(card_data, base)))
 			"vulnerable_bonus_damage":
 				var current = effect.get("value", 0)
@@ -1257,6 +1274,11 @@ func _build_combat_description_segments(card_data: Dictionary) -> Array:
 			"poison_burst":
 				lines.append([_plain_segment("敵の毒1につき%dダメージ。" % effect.get("value", 4))])
 				lines.append([_plain_segment("毒をすべて消費する。")])
+			"lose_max_hp":
+				lines.append([_plain_segment("最大HPが%d減る。" % effect.get("value", 0))])
+			"self_temp_discard":
+				var temp_name = GameState.TEMPORARY_STATUS_CARDS.get(effect.get("card_id", ""), {}).get("name", "お邪魔")
+				lines.append([_plain_segment("「%s」を捨て札に混ぜる。" % temp_name)])
 	return lines
 
 func _preview_damage(card_data: Dictionary, base: int) -> int:
@@ -1699,6 +1721,9 @@ func _after_enemy_died() -> void:
 	# 血濡れの剣片: 敵撃破時HP回復
 	if GameState.has_relic("bloodied_blade_shard"):
 		GameState.heal(5)
+	# 飢えた魔剣: 戦闘終了時にHPを失う
+	if GameState.has_relic("hungry_blade"):
+		GameState.player_hp = maxi(1, GameState.player_hp - 2)
 	GameState.complete_map_node(GameState.map_current_node_id)
 	var is_boss = _enemy_data.get("is_boss", false) or GameState.map_encounter_is_boss
 	# 「幕ボス」= 接続先のないボスノード。中ボス(関門)はラン継続して通常報酬へ

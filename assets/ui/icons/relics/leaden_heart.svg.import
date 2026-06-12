@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dpwi40rv04ml"
-path="res://.godot/imported/deep_wound.svg-77f6a732c297ea31756ff4b40fd83c1e.ctex"
+uid="uid://cxmiqctlrw66p"
+path="res://.godot/imported/leaden_heart.svg-73447991c7f04cc0bce4ef598297240f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/icons/deep_wound.svg"
-dest_files=["res://.godot/imported/deep_wound.svg-77f6a732c297ea31756ff4b40fd83c1e.ctex"]
+source_file="res://assets/ui/icons/relics/leaden_heart.svg"
+dest_files=["res://.godot/imported/leaden_heart.svg-73447991c7f04cc0bce4ef598297240f.ctex"]
 
 [params]
 
@@ -38,6 +38,6 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
-svg/scale=0.4
+svg/scale=0.27
 editor/scale_with_editor_scale=false
 editor/convert_colors_with_editor_theme=false
