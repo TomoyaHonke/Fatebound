@@ -622,6 +622,13 @@ const CARDS: Dictionary = {
 			{"type": "self_temp_draw", "card_id": "restraint", "amount": 1}
 		]
 	},
+	"greed_price": {
+		"id": "greed_price", "name": "強欲の代償", "cost": -1,
+		"description": "使用できない。\n手札にあると\nターン終了時HPを2失う。\n休憩で除去できる。",
+		"rarity": "common",
+		"type": "curse",
+		"effects": []
+	},
 	"frenzy": {
 		"id": "frenzy", "name": "狂乱", "cost": 1,
 		"description": "このターン、攻撃カードの\nダメージ+4。\n自分に脆弱を2受ける。",
@@ -1368,9 +1375,8 @@ func can_remove_card(card_ref) -> bool:
 	var card = get_card(card_ref)
 	if card.is_empty():
 		return false
+	# 戦闘限りの一時カードは除去対象外。デッキに残る永続呪いは休憩で除去できる
 	if card.get("temporary", false):
-		return false
-	if card.get("type", "") == "status" or card.get("type", "") == "curse":
 		return false
 	return true
 
@@ -1535,9 +1541,21 @@ func _trigger_temporary_card_on_draw(card_ref) -> void:
 			_queue_combat_log("妖精の悪戯で1ダメージとエナジー-1。")
 
 func _trigger_temporary_card_on_turn_end(card_ref) -> void:
+	var card_id := ""
+	if card_ref is Dictionary:
+		card_id = String(card_ref.get("id", ""))
+	else:
+		card_id = String(card_ref)
+	# デッキに残る永続呪い(一時カードではないので先に処理する)
+	if card_id == "greed_price":
+		var actual_greed = mini(2, player_hp)
+		player_hp = maxi(0, player_hp - 2)
+		_queue_player_damage_event(actual_greed, "greed_price")
+		_queue_combat_log("強欲の代償。HPを2失った。")
+		return
 	if not is_temporary_card(card_ref):
 		return
-	match card_ref.get("id", ""):
+	match card_id:
 		"brand_of_sin":
 			var actual = mini(2, player_hp)
 			player_hp = maxi(0, player_hp - 2)
@@ -1834,6 +1852,18 @@ func roll_relic_reward(context: String = "normal") -> String:
 			pool.append(id)
 	if pool.is_empty():
 		pool = available
+	return pool.pick_random()
+
+## 指定レア度の未所持レリックを1個抽選する(ボス専用は除く)。無ければ空文字。
+func roll_relic_reward_of_rarity(rarity: String) -> String:
+	var pool: Array = []
+	for id in RELICS:
+		if owned_relic_ids.has(id):
+			continue
+		if RELICS[id].get("rarity", "common") == rarity and rarity != "boss":
+			pool.append(id)
+	if pool.is_empty():
+		return ""
 	return pool.pick_random()
 
 func roll_relic_choices(count: int, context: String = "start") -> Array:

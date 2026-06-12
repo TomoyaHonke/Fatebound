@@ -79,6 +79,7 @@ artwork is unmodified. Source icon for each card:
 | life_reap 命の収奪 | lorc/scythe |
 | endless_revenge 終わらぬ復讐 | lorc/spinning-sword |
 | abyss_contract 奈落との契約 | lorc/pentagram-rose |
+| greed_price 強欲の代償 | lorc/swap-bag |
 | junk ガラクタ | lorc/broken-bottle |
 | brand_of_sin 罪の烙印 | lorc/wax-seal |
 | arrow_wound 矢傷 | lorc/arrowed |

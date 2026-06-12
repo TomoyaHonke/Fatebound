@@ -7,8 +7,11 @@ const C_BG   = Color(0.02, 0.016, 0.027, 0.0)
 const C_GOLD = Color(0.86, 0.72, 0.34)
 const C_TEXT = Color(0.84, 0.78, 0.96)
 
-var _reward_card_id: String = ""
-var _card_node: Control
+const CURSED_CHANCE := 0.33
+
+var _relic_id: String = ""
+var _is_cursed: bool = false
+var _is_empty_chest: bool = false
 var _result_label: Label
 var _take_btn: Button
 var _skip_btn: Button
@@ -19,8 +22,15 @@ var _choice_panel: Control
 func _ready() -> void:
 	_apply_screen_scale()
 	GameState.complete_map_node(GameState.map_current_node_id)
-	var pool = GameState.get_reward_options()
-	_reward_card_id = pool[0] if not pool.is_empty() else ""
+	# 呪われた宝: エピック確定+呪いカード混入。通常: 強敵相当のレリック
+	_is_cursed = randf() < CURSED_CHANCE
+	if _is_cursed:
+		_relic_id = GameState.roll_relic_reward_of_rarity("epic")
+		if _relic_id.is_empty():
+			_is_cursed = false
+	if _relic_id.is_empty():
+		_relic_id = GameState.roll_relic_reward("elite")
+	_is_empty_chest = _relic_id.is_empty()
 	_build_ui()
 
 func _apply_screen_scale() -> void:
@@ -57,19 +67,24 @@ func _build_ui() -> void:
 	panel.add_child(header)
 
 	var title = Label.new()
-	title.text = "封印された宝"
+	title.text = "呪われた宝" if _is_cursed else "封印された宝"
 	title.position = Vector2(20, 46)
 	title.size = Vector2(640, 40)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 28)
-	title.add_theme_color_override("font_color", C_GOLD)
+	title.add_theme_color_override("font_color", Color(0.92, 0.36, 0.40) if _is_cursed else C_GOLD)
 	title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.80))
 	title.add_theme_constant_override("shadow_offset_x", 2)
 	title.add_theme_constant_override("shadow_offset_y", 2)
 	panel.add_child(title)
 
 	var desc = Label.new()
-	desc.text = "古い宝箱の中に一枚のカードが眠っていた。"
+	if _is_empty_chest:
+		desc.text = "宝はすでに持ち去られていた。底に薬瓶だけが残っている。"
+	elif _is_cursed:
+		desc.text = "箱には黒い鎖が巻かれている。──開けば、対価を求められる。"
+	else:
+		desc.text = "古い宝箱の中で、何かが鈍く光っている。"
 	desc.position = Vector2(40, 96)
 	desc.size = Vector2(600, 30)
 	desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -77,16 +92,60 @@ func _build_ui() -> void:
 	desc.add_theme_color_override("font_color", C_TEXT)
 	panel.add_child(desc)
 
-	# Card preview
-	if not _reward_card_id.is_empty():
-		var card_data = GameState.get_card(_reward_card_id)
-		if not card_data.is_empty():
-			var card_scene = load(CARD_SCENE)
-			_card_node = card_scene.instantiate()
-			_card_node.position = Vector2(275, 134)
-			_card_node.setup(card_data, 0, false)
-			_card_node.set_base_y(134)
-			panel.add_child(_card_node)
+	# レリックのお披露目
+	if not _is_empty_chest:
+		var relic = GameState.get_relic_definition(_relic_id)
+
+		# 明るい宝箱アートの上でも読めるように、文字の背面に薄い暗幕を敷く
+		var scrim = Panel.new()
+		scrim.position = Vector2(110, 216)
+		scrim.size = Vector2(460, 124 if _is_cursed else 94)
+		var scrim_style = StyleBoxFlat.new()
+		scrim_style.bg_color = Color(0.02, 0.015, 0.04, 0.62)
+		scrim_style.set_border_width_all(0)
+		scrim_style.set_corner_radius_all(8)
+		scrim.add_theme_stylebox_override("panel", scrim_style)
+		panel.add_child(scrim)
+
+		var medallion = preload("res://scenes/ui/RelicMedallion.gd").new()
+		medallion.position = Vector2((680.0 - 72.0) / 2.0, 138)
+		panel.add_child(medallion)
+		medallion.setup(_relic_id, 72.0, false, true)
+
+		var name_lbl = Label.new()
+		name_lbl.text = relic.get("name_jp", "")
+		name_lbl.position = Vector2(40, 224)
+		name_lbl.size = Vector2(600, 30)
+		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_lbl.add_theme_font_size_override("font_size", 21)
+		name_lbl.add_theme_color_override("font_color", Color(0.95, 0.88, 0.62))
+		name_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+		name_lbl.add_theme_constant_override("shadow_offset_x", 1)
+		name_lbl.add_theme_constant_override("shadow_offset_y", 1)
+		panel.add_child(name_lbl)
+
+		var effect_lbl = Label.new()
+		effect_lbl.text = relic.get("effect_jp", "")
+		effect_lbl.position = Vector2(60, 258)
+		effect_lbl.size = Vector2(560, 46)
+		effect_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		effect_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		effect_lbl.add_theme_font_size_override("font_size", 15)
+		effect_lbl.add_theme_color_override("font_color", Color(0.88, 0.86, 0.96))
+		effect_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+		effect_lbl.add_theme_constant_override("shadow_offset_x", 1)
+		effect_lbl.add_theme_constant_override("shadow_offset_y", 1)
+		panel.add_child(effect_lbl)
+
+		if _is_cursed:
+			var warn_lbl = Label.new()
+			warn_lbl.text = "※ 開けると「強欲の代償」がデッキに混ざる(休憩で除去可能)"
+			warn_lbl.position = Vector2(60, 308)
+			warn_lbl.size = Vector2(560, 26)
+			warn_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			warn_lbl.add_theme_font_size_override("font_size", 13)
+			warn_lbl.add_theme_color_override("font_color", Color(0.92, 0.46, 0.46))
+			panel.add_child(warn_lbl)
 
 	_result_label = Label.new()
 	_result_label.position = Vector2(40, 355)
@@ -103,7 +162,8 @@ func _build_ui() -> void:
 	_choice_panel.size = Vector2(500, 110)
 	panel.add_child(_choice_panel)
 
-	_take_btn = _make_btn("カードを受け取る", Vector2(250, 28))
+	var take_text = "薬瓶を取る(HP10回復)" if _is_empty_chest else ("鎖を解いて開ける" if _is_cursed else "宝を受け取る")
+	_take_btn = _make_btn(take_text, Vector2(250, 28))
 	_take_btn.pressed.connect(_on_take)
 	_choice_panel.add_child(_take_btn)
 
@@ -119,18 +179,20 @@ func _build_ui() -> void:
 	modulate.a = 0.0
 	var t = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 	t.tween_property(self, "modulate:a", 1.0, 0.45)
-	if _card_node:
-		_card_node.modulate.a = 0.0
-		t.parallel().tween_property(_card_node, "modulate:a", 1.0, 0.55).set_delay(0.18)
 
 
 func _on_take() -> void:
-	if not _reward_card_id.is_empty():
-		GameState.add_card_to_deck(_reward_card_id)
-		var card_data = GameState.get_card(_reward_card_id)
-		_result_label.text = "「%s」をデッキに加えた。" % card_data.get("name", _reward_card_id)
+	if _is_empty_chest:
+		GameState.heal(10)
+		_result_label.text = "薬を飲み干した。HPが10回復した。"
 	else:
-		_result_label.text = "宝箱の中は空だった。"
+		GameState.add_relic(_relic_id)
+		var relic = GameState.get_relic_definition(_relic_id)
+		if _is_cursed:
+			GameState.add_card_to_deck("greed_price")
+			_result_label.text = "「%s」を手に入れた。──「強欲の代償」がデッキに混ざった。" % relic.get("name_jp", "")
+		else:
+			_result_label.text = "「%s」を手に入れた。" % relic.get("name_jp", "")
 	_result_label.visible = true
 	_choice_panel.visible = false
 	_continue_btn.visible = true
