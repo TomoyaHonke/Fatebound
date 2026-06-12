@@ -26,6 +26,9 @@ func save_run() -> void:
 		"map_encounter_enemy_id": GameState.map_encounter_enemy_id,
 		"map_encounter_is_boss": GameState.map_encounter_is_boss,
 		"last_enemy_id": GameState.last_enemy_id,
+		# 任意キー(旧セーブには無くても良い)
+		"enemy_bag_normal": GameState.enemy_bag_normal.duplicate(),
+		"enemy_bag_elite": GameState.enemy_bag_elite.duplicate(),
 	}
 	_write_variant(RUN_SAVE_PATH, data)
 
@@ -53,6 +56,8 @@ func load_run() -> bool:
 	GameState.map_encounter_enemy_id = String(data["map_encounter_enemy_id"])
 	GameState.map_encounter_is_boss = bool(data["map_encounter_is_boss"])
 	GameState.last_enemy_id = String(data["last_enemy_id"])
+	GameState.enemy_bag_normal = (data.get("enemy_bag_normal", []) as Array).duplicate()
+	GameState.enemy_bag_elite = (data.get("enemy_bag_elite", []) as Array).duplicate()
 	# 戦闘スコープの状態はクリーンに戻す
 	GameState.player_block = 0
 	GameState.player_energy = GameState.player_max_energy

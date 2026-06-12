@@ -35,6 +35,9 @@ var map_encounter_enemy_idx: int = 0
 var map_encounter_enemy_id: String = "holy_soldier"
 var map_encounter_is_boss: bool = false
 var last_enemy_id: String = ""
+# 敵抽選の袋(幕ごとにリセット。引き切るまで同じ敵は出ない)
+var enemy_bag_normal: Array = []
+var enemy_bag_elite: Array = []
 var first_attack_used_this_combat: bool = false
 
 # ── Enemy debug ───────────────────────────────────────────────────────────────
@@ -154,7 +157,7 @@ const MAP_NODES_ACT1: Dictionary = {
 	"f2_battle_a": {"id": "f2_battle_a", "layer": 1, "type": "normal_battle", "connections": ["f3_battle_a", "f3_event"], "pos": Vector2(380, 960)},
 	"f2_battle_b": {"id": "f2_battle_b", "layer": 1, "type": "normal_battle", "connections": ["f3_event", "f3_battle_b"], "pos": Vector2(700, 960)},
 	"f3_battle_a": {"id": "f3_battle_a", "layer": 3, "type": "normal_battle", "connections": ["f4_battle_a", "f4_treasure"], "pos": Vector2(250, 850)},
-	"f3_event": {"id": "f3_event", "layer": 3, "type": "event", "connections": ["f4_battle_a", "f4_treasure", "f4_battle_b"], "pos": Vector2(540, 850)},
+	"f3_event": {"id": "f3_event", "layer": 3, "type": "event", "connections": ["f4_battle_a", "f4_battle_b"], "pos": Vector2(540, 850)},
 	"f3_battle_b": {"id": "f3_battle_b", "layer": 3, "type": "normal_battle", "connections": ["f4_treasure", "f4_battle_b"], "pos": Vector2(830, 850)},
 	"f4_battle_a": {"id": "f4_battle_a", "layer": 4, "type": "normal_battle", "connections": ["f5_elite", "f5_battle"], "pos": Vector2(250, 770)},
 	"f4_treasure": {"id": "f4_treasure", "layer": 4, "type": "treasure", "connections": ["f5_elite", "f5_battle", "f5_event"], "pos": Vector2(540, 770)},
@@ -165,7 +168,7 @@ const MAP_NODES_ACT1: Dictionary = {
 	"f6_rest": {"id": "f6_rest", "layer": 6, "type": "rest", "connections": ["f7_battle_a", "f7_elite"], "pos": Vector2(380, 610)},
 	"f6_battle": {"id": "f6_battle", "layer": 6, "type": "normal_battle", "connections": ["f7_elite", "f7_battle_b"], "pos": Vector2(700, 610)},
 	"f7_battle_a": {"id": "f7_battle_a", "layer": 7, "type": "normal_battle", "connections": ["f8_event", "f8_battle"], "pos": Vector2(260, 530)},
-	"f7_elite": {"id": "f7_elite", "layer": 7, "type": "elite_battle", "connections": ["f8_event", "f8_battle", "f8_treasure"], "pos": Vector2(540, 530)},
+	"f7_elite": {"id": "f7_elite", "layer": 7, "type": "elite_battle", "connections": ["f8_battle", "f8_treasure"], "pos": Vector2(540, 530)},
 	"f7_battle_b": {"id": "f7_battle_b", "layer": 7, "type": "normal_battle", "connections": ["f8_battle", "f8_treasure"], "pos": Vector2(820, 530)},
 	"f8_event": {"id": "f8_event", "layer": 8, "type": "event", "connections": ["f9_battle_a", "f9_elite"], "pos": Vector2(250, 450)},
 	"f8_battle": {"id": "f8_battle", "layer": 8, "type": "normal_battle", "connections": ["f9_battle_a", "f9_elite", "f9_battle_b"], "pos": Vector2(540, 450)},
@@ -176,7 +179,7 @@ const MAP_NODES_ACT1: Dictionary = {
 	"f10_rest": {"id": "f10_rest", "layer": 10, "type": "rest", "connections": ["f11_battle_a", "f11_event"], "pos": Vector2(380, 290)},
 	"f10_battle": {"id": "f10_battle", "layer": 10, "type": "normal_battle", "connections": ["f11_event", "f11_battle_b"], "pos": Vector2(700, 290)},
 	"f11_battle_a": {"id": "f11_battle_a", "layer": 11, "type": "normal_battle", "connections": ["f12_elite", "f12_battle"], "pos": Vector2(260, 210)},
-	"f11_event": {"id": "f11_event", "layer": 11, "type": "event", "connections": ["f12_elite", "f12_battle"], "pos": Vector2(540, 210)},
+	"f11_event": {"id": "f11_event", "layer": 11, "type": "event", "connections": ["f12_battle"], "pos": Vector2(540, 210)},
 	"f11_battle_b": {"id": "f11_battle_b", "layer": 11, "type": "normal_battle", "connections": ["f12_battle"], "pos": Vector2(820, 210)},
 	"f12_elite": {"id": "f12_elite", "layer": 12, "type": "elite_battle", "connections": ["f13_rest"], "pos": Vector2(400, 170)},
 	"f12_battle": {"id": "f12_battle", "layer": 12, "type": "normal_battle", "connections": ["f13_rest"], "pos": Vector2(680, 170)},
@@ -257,6 +260,7 @@ func apply_act_map() -> void:
 func reset_map() -> void:
 	current_act = 1
 	apply_act_map()
+	reset_enemy_bags()
 	map_current_node_id = "start"
 	map_visited_nodes = ["start"]
 	map_available_nodes = ["starter_relic"]
@@ -277,6 +281,7 @@ func complete_map_node(node_id: String) -> void:
 func start_act2_map() -> void:
 	current_act = 2
 	apply_act_map()
+	reset_enemy_bags()
 	map_current_node_id = "starter_relic"
 	map_visited_nodes = ["start", "starter_relic"]
 	map_available_nodes = MAP_NODES.get("starter_relic", {}).get("connections", []).duplicate()
@@ -288,6 +293,7 @@ func start_act2_map() -> void:
 func start_act3_map() -> void:
 	current_act = 3
 	apply_act_map()
+	reset_enemy_bags()
 	map_current_node_id = "starter_relic"
 	map_visited_nodes = ["start", "starter_relic"]
 	map_available_nodes = MAP_NODES.get("starter_relic", {}).get("connections", []).duplicate()
@@ -1448,6 +1454,13 @@ func choose_enemy_for_map_node(node_type: String, node_id: String = "") -> Strin
 			pool_key = "%s_boss" % act_prefix
 		_:
 			pool_key = "%s_normal" % act_prefix
+
+	# 通常/強敵は袋方式: プール全種を引き切るまで同じ敵は出ない
+	if node_type == "normal_battle" or node_type == "elite_battle":
+		var picked := _draw_from_enemy_bag(pool_key)
+		if not picked.is_empty():
+			return picked
+
 	var pool: Array = ENEMY_POOLS.get(pool_key, ENEMY_POOLS["act1_normal"])
 	if pool.is_empty():
 		return "royal_guard" if current_act >= 2 else "young_swordsman"
@@ -1457,6 +1470,25 @@ func choose_enemy_for_map_node(node_type: String, node_id: String = "") -> Strin
 	var seed_text := node_id if not node_id.is_empty() else node_type
 	var idx = abs(hash("%s:%s" % [seed_text, last_enemy_id])) % candidates.size()
 	return candidates[idx]
+
+func _draw_from_enemy_bag(pool_key: String) -> String:
+	var pool: Array = ENEMY_POOLS.get(pool_key, [])
+	if pool.is_empty():
+		return ""
+	var bag: Array = enemy_bag_normal if pool_key.ends_with("_normal") else enemy_bag_elite
+	if bag.is_empty():
+		var refill: Array = pool.duplicate()
+		refill.shuffle()
+		# 引き直し直後に直前の敵が連続しないようにする
+		if refill.size() > 1 and refill.back() == last_enemy_id:
+			refill.pop_back()
+			refill.insert(0, last_enemy_id)
+		bag.assign(refill)
+	return bag.pop_back()
+
+func reset_enemy_bags() -> void:
+	enemy_bag_normal.clear()
+	enemy_bag_elite.clear()
 
 func get_map_node_floor(node_id: String) -> int:
 	var node: Dictionary = MAP_NODES.get(node_id, {})
