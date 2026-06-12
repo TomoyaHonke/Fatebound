@@ -34,7 +34,7 @@ fallen_feather (lorc/feather), memory_of_betrayal (lorc/broken-heart),
 bloodied_blade_shard (lorc/shard-sword), pact_brand (lorc/wax-seal),
 executioner_mask (delapouite/executioner-hood), rotted_crown (lorc/crown-of-thorns),
 abyss_core (lorc/floating-crystal), chain_of_judgement (lorc/crossed-chains),
-fate_severing_thread (lorc/swirl-string), former_hunter_bow (lorc/pocket-bow),
+thread_hourglass (lorc/empty-hourglass), former_hunter_bow (lorc/pocket-bow),
 hunter_tracking_eye (lorc/beast-eye), hunter_trapwire (lorc/wolf-trap),
 false_holy_seal (lorc/spiked-halo), deceit_chalice (lorc/chalice-drops),
 martyr_rosary (lorc/gem-necklace), unyielding_white_shield (lorc/crenulated-shield),
@@ -58,7 +58,10 @@ artwork is unmodified. Source icon for each card:
 | end_of_pain 痛みの果て | lorc/broken-bone |
 | blood_price 血の代償 | lorc/bloody-sword |
 | abyss_thirst 奈落の渇き | lorc/drink-me |
-| parry 受け流し | lorc/sword-clash |
+| thorned_parry 棘の受け流し | lorc/arrows-shield |
+| immovable 不動 | lorc/stone-tower |
+| heavy_decapitator 重い断頭剣 | lorc/battle-axe |
+| frenzy 狂乱 | lorc/dervish-swords |
 | brace 身構える | lorc/checked-shield |
 | mark_of_hatred 憎悪の印 | lorc/cursed-star |
 | borrowed_life 命の前借り | lorc/glass-heart |

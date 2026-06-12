@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://netfevcloyck"
-path="res://.godot/imported/parry.svg-c807874bda5ac442439d78dfab5291eb.ctex"
+uid="uid://dkmcgpcddhyv3"
+path="res://.godot/imported/thread_hourglass.svg-0202768756b1968612a82c7bc741b573.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/icons/parry.svg"
-dest_files=["res://.godot/imported/parry.svg-c807874bda5ac442439d78dfab5291eb.ctex"]
+source_file="res://assets/ui/icons/relics/thread_hourglass.svg"
+dest_files=["res://.godot/imported/thread_hourglass.svg-0202768756b1968612a82c7bc741b573.ctex"]
 
 [params]
 
@@ -38,6 +38,6 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
-svg/scale=0.4
+svg/scale=0.27
 editor/scale_with_editor_scale=false
 editor/convert_colors_with_editor_theme=false

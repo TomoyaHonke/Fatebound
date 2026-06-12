@@ -95,6 +95,10 @@ var _busy:         bool = false  # while animating / enemy acting
 var _battle_turn:  int = 0
 var _was_elite:    bool = false
 var _is_gate_midboss: bool = false  # 関門の中ボス(専用レリック報酬)
+var _turn_thorns: int = 0           # 棘の受け流し(このターンの反撃量)
+var _turn_attack_bonus: int = 0     # 狂乱(このターンの攻撃ボーナス)
+var _carry_full_block_once: bool = false  # 不動(次ターンにブロック全量持ち越し)
+var _first_card_discount_used: bool = false  # 黒糸の砂時計(毎戦闘1回)
 
 # ── UI nodes ─────────────────────────────────────────────────────────────────
 var _bg:              ColorRect
@@ -681,7 +685,7 @@ func _update_card_playability() -> void:
 		if card_data.is_empty():
 			continue
 		var cost = card_data.get("cost", 0)
-		var can = cost >= 0 and GameState.player_energy >= cost
+		var can = cost >= 0 and GameState.player_energy >= _effective_card_cost(cost)
 		card_node.playable = can
 		card_node.queue_redraw()
 
@@ -812,6 +816,11 @@ func _start_battle() -> void:
 	_enemy_max_hp = _enemy_hp
 	_enemy_block = 0
 
+	_turn_thorns = 0
+	_turn_attack_bonus = 0
+	_carry_full_block_once = false
+	_first_card_discount_used = false
+
 	var is_boss = _enemy_data.get("is_boss", false) or GameState.map_encounter_is_boss
 	var node_type = GameState.MAP_NODES.get(GameState.map_current_node_id, {}).get("type", "normal_battle")
 	# 中ボス(接続先のあるボスノード)は専用レリック報酬を出す
@@ -873,12 +882,16 @@ func _start_player_turn() -> void:
 	GameState.player_energy = GameState.player_max_energy
 
 	# ターン1以外はブロックをリセット（ターン1は戦闘開始時レリック効果を保持）
-	# 不抜の白盾: ブロックを10まで持ち越せる
+	# 不動: 1回だけ全量持ち越し / 不抜の白盾: 10まで持ち越し
 	if _battle_turn > 1:
-		if GameState.has_relic("unyielding_white_shield"):
+		if _carry_full_block_once:
+			_carry_full_block_once = false
+		elif GameState.has_relic("unyielding_white_shield"):
 			GameState.player_block = mini(GameState.player_block, 10)
 		else:
 			GameState.player_block = 0
+	_turn_thorns = 0
+	_turn_attack_bonus = 0
 
 	# Turn-start relic energy bonus
 	var energy_bonus = GameState.get_turn_energy_bonus(_battle_turn)
@@ -955,7 +968,7 @@ func _refresh_hand(slide_from_current: bool = false) -> void:
 		var target_x = start_x + i * (scaled_card_w + gap)
 		cn.position = Vector2(target_x, HAND_Y)
 		var cost = card_data.get("cost", 0)
-		cn.setup(card_data, i, cost >= 0 and GameState.player_energy >= cost)
+		cn.setup(card_data, i, cost >= 0 and GameState.player_energy >= _effective_card_cost(cost))
 		cn.set_base_y(HAND_Y)
 		cn.set_base_scale(Vector2(card_scale, card_scale))
 		cn.card_clicked.connect(_on_card_played)
@@ -995,7 +1008,8 @@ func _on_card_played(card_index: int) -> void:
 			card_node.flash_unplayable()
 		_log("このカードは使用できない。")
 		return
-	if GameState.player_energy < cost:
+	var pay_cost = _effective_card_cost(cost)
+	if GameState.player_energy < pay_cost:
 		if card_node:
 			card_node.flash_unplayable()
 		_log("エナジーが足りない。")
@@ -1005,7 +1019,10 @@ func _on_card_played(card_index: int) -> void:
 	_busy = true
 	if card_node:
 		_card_nodes.erase(card_node)
-	GameState.player_energy -= cost
+	GameState.player_energy -= pay_cost
+	if pay_cost < cost:
+		_first_card_discount_used = true
+		_log("黒糸の砂時計: コスト-1。")
 	GameState.hand.remove_at(card_index)
 	GameState.discard.append(card_ref)
 
@@ -1107,6 +1124,12 @@ func _shake_battle_layer(strength: float = 4.0) -> void:
 			Vector2(randf_range(-strength, strength), randf_range(-strength * 0.5, strength * 0.5)), 0.04)
 	t.tween_property(_battle_layer, "position", Vector2.ZERO, 0.05)
 
+func _effective_card_cost(cost: int) -> int:
+	# 黒糸の砂時計: 毎戦闘、最初に使うカードのコスト-1
+	if cost > 0 and not _first_card_discount_used and GameState.has_relic("thread_hourglass"):
+		return cost - 1
+	return cost
+
 func _get_card_node_at(card_index: int):
 	if card_index < 0 or card_index >= _card_nodes.size():
 		return null
@@ -1202,6 +1225,20 @@ func _apply_effects(card_data: Dictionary) -> void:
 				GameState.add_temporary_card_to_discard_pile(temp_id, int(effect.get("amount", 1)))
 				var temp_name = GameState.TEMPORARY_STATUS_CARDS.get(temp_id, {}).get("name", "お邪魔")
 				_log("「%s」が捨て札に混ざった。" % temp_name)
+			"self_temp_draw":
+				var temp_id2 = effect.get("card_id", "")
+				GameState.add_temporary_card_to_draw_pile(temp_id2, int(effect.get("amount", 1)))
+				var temp_name2 = GameState.TEMPORARY_STATUS_CARDS.get(temp_id2, {}).get("name", "お邪魔")
+				_log("「%s」が山札に混ざった。" % temp_name2)
+			"turn_thorns":
+				_turn_thorns += int(effect.get("value", 0))
+				_log("このターン、攻撃を受けるたび%dダメージを返す。" % _turn_thorns)
+			"carry_block_once":
+				_carry_full_block_once = true
+				_log("次のターンにブロックを全量持ち越す。")
+			"turn_attack_bonus":
+				_turn_attack_bonus += int(effect.get("value", 0))
+				_log("このターン、攻撃カードのダメージ+%d。" % _turn_attack_bonus)
 			"poison_burst":
 				if _enemy_node:
 					var stacks = int(_enemy_node.statuses.get("poison", 0))
@@ -1279,6 +1316,17 @@ func _build_combat_description_segments(card_data: Dictionary) -> Array:
 			"self_temp_discard":
 				var temp_name = GameState.TEMPORARY_STATUS_CARDS.get(effect.get("card_id", ""), {}).get("name", "お邪魔")
 				lines.append([_plain_segment("「%s」を捨て札に混ぜる。" % temp_name)])
+			"self_temp_draw":
+				var temp_name2 = GameState.TEMPORARY_STATUS_CARDS.get(effect.get("card_id", ""), {}).get("name", "お邪魔")
+				lines.append([_plain_segment("「%s」を山札に混ぜる。" % temp_name2)])
+			"turn_thorns":
+				lines.append([_plain_segment("このターン、攻撃を")])
+				lines.append([_plain_segment("受けるたび%d返す。" % effect.get("value", 0))])
+			"carry_block_once":
+				lines.append([_plain_segment("次のターンに全量持ち越す。")])
+			"turn_attack_bonus":
+				lines.append([_plain_segment("このターン、攻撃カードの")])
+				lines.append([_plain_segment("ダメージ+%d。" % effect.get("value", 0))])
 	return lines
 
 func _preview_damage(card_data: Dictionary, base: int) -> int:
@@ -1319,7 +1367,7 @@ func _damage_preview_color(base: int, current: int) -> Color:
 	return Color(0.88, 0.86, 0.96)
 
 func _calc_player_damage(base: int) -> int:
-	var dmg = base
+	var dmg = base + _turn_attack_bonus
 	if GameState.player_statuses.get("weak", 0) > 0:
 		dmg = int(dmg * 0.75)
 	return dmg
@@ -1837,6 +1885,10 @@ func _damage_player_with_effect(raw_damage: int, number_offset: Vector2 = Vector
 	if actual > 0 and GameState.has_relic("shield_thorns") and _enemy_node and _enemy_node.current_hp > 0:
 		var dealt = _enemy_node.take_damage(3)
 		_show_damage_number(dealt, _enemy_node.position + Vector2(-30, -160), Color(1.0, 0.75, 0.35))
+	# 棘の受け流し: ブロックしていても攻撃を受けるたび反撃する
+	if raw_damage > 0 and _turn_thorns > 0 and _enemy_node and _enemy_node.current_hp > 0:
+		var dealt2 = _enemy_node.take_damage(_turn_thorns)
+		_show_damage_number(dealt2, _enemy_node.position + Vector2(-30, -160), Color(1.0, 0.75, 0.35))
 	return actual
 
 func _play_player_damage_feedback(actual_damage: int, number_offset: Vector2 = Vector2(0, -154)) -> void:

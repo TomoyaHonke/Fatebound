@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bq7vksfe2filf"
-path="res://.godot/imported/fate_severing_thread.svg-109cffa6c9192a2b9aefd20c92bb4b00.ctex"
+uid="uid://bd841wa05osdo"
+path="res://.godot/imported/heavy_decapitator.svg-c4a735b3d3d857ea76f689f0a09ccb7f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ui/icons/relics/fate_severing_thread.svg"
-dest_files=["res://.godot/imported/fate_severing_thread.svg-109cffa6c9192a2b9aefd20c92bb4b00.ctex"]
+source_file="res://assets/cards/icons/heavy_decapitator.svg"
+dest_files=["res://.godot/imported/heavy_decapitator.svg-c4a735b3d3d857ea76f689f0a09ccb7f.ctex"]
 
 [params]
 
@@ -38,6 +38,6 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
-svg/scale=0.27
+svg/scale=0.4
 editor/scale_with_editor_scale=false
 editor/convert_colors_with_editor_theme=false

@@ -393,12 +393,12 @@ const RELICS: Dictionary = {
 		"description_jp": "敵に脆弱を付与するたび、追加で脆弱を1付与する。\n裁く側だった者たちを、今度はこちらが縛る。",
 		"rarity": "epic", "icon_text": "鎖"
 	},
-	"fate_severing_thread": {
-		"id": "fate_severing_thread", "name_jp": "運命断ちの黒糸",
-		"effect_jp": "カード報酬で rare / epic カードが出やすくなる。",
-		"memory_jp": "決められた運命を、黒い糸が断ち切る。",
-		"description_jp": "カード報酬で rare / epic カードが出やすくなる。\n決められた運命を、黒い糸が断ち切る。",
-		"rarity": "epic", "icon_text": "鎖"
+	"thread_hourglass": {
+		"id": "thread_hourglass", "name_jp": "黒糸の砂時計",
+		"effect_jp": "毎戦闘、最初に使うカードのコストが1減る。",
+		"memory_jp": "落ちる砂の最初の一粒だけ、黒い糸が受け止める。",
+		"description_jp": "毎戦闘、最初に使うカードのコストが1減る。\n落ちる砂の最初の一粒だけ、黒い糸が受け止める。",
+		"rarity": "epic", "icon_text": "砂"
 	},
 	"former_hunter_bow": {
 		"id": "former_hunter_bow", "name_jp": "狩人の遺弓",
@@ -493,10 +493,10 @@ const CARD_RARITY_WEIGHTS: Dictionary = {
 	"epic": 3,
 }
 const CARD_REWARD_POOL: Array = [
-	"rusted_combo", "corroding_blade", "corrosive_mist", "end_of_pain", "parry", "brace", "mark_of_hatred", "borrowed_life",
+	"rusted_combo", "corroding_blade", "corrosive_mist", "end_of_pain", "thorned_parry", "brace", "mark_of_hatred", "borrowed_life",
 	"revenge_blade", "condemnation", "blood_pursuit", "pain_to_power", "fallen_grace", "pact_price",
-	"unforgiven", "headsman", "slow_death", "blood_price", "abyss_reversal", "oathbreaker", "fallen_wings", "life_reap",
-	"endless_revenge", "abyss_contract", "poison_burst", "abyss_thirst",
+	"unforgiven", "headsman", "slow_death", "blood_price", "heavy_decapitator", "abyss_reversal", "oathbreaker", "fallen_wings", "life_reap",
+	"endless_revenge", "abyss_contract", "poison_burst", "abyss_thirst", "immovable", "frenzy",
 ]
 
 const CARDS: Dictionary = {
@@ -592,12 +592,45 @@ const CARDS: Dictionary = {
 			{"type": "self_temp_discard", "card_id": "guilt", "amount": 1}
 		]
 	},
-	"parry": {
-		"id": "parry", "name": "受け流し", "cost": 1,
-		"description": "ブロックを7得る。",
-		"rarity": "common",
+	"thorned_parry": {
+		"id": "thorned_parry", "name": "棘の受け流し", "cost": 1,
+		"description": "ブロックを7得る。\nこのターン、攻撃を\n受けるたび4返す。",
+		"rarity": "rare",
 		"type": "defense",
-		"effects": [{"type": "block", "value": 7}]
+		"effects": [
+			{"type": "block", "value": 7},
+			{"type": "turn_thorns", "value": 4}
+		]
+	},
+	"immovable": {
+		"id": "immovable", "name": "不動", "cost": 2,
+		"description": "ブロックを16得る。\n次のターンに\n全量持ち越す。",
+		"rarity": "epic",
+		"type": "defense",
+		"effects": [
+			{"type": "block", "value": 16},
+			{"type": "carry_block_once"}
+		]
+	},
+	"heavy_decapitator": {
+		"id": "heavy_decapitator", "name": "重い断頭剣", "cost": 2,
+		"description": "敵に24ダメージ。\n「拘束」を\n山札に混ぜる。",
+		"rarity": "rare",
+		"type": "attack",
+		"effects": [
+			{"type": "damage", "value": 24},
+			{"type": "self_temp_draw", "card_id": "restraint", "amount": 1}
+		]
+	},
+	"frenzy": {
+		"id": "frenzy", "name": "狂乱", "cost": 1,
+		"description": "このターン、攻撃カードの\nダメージ+4。\n自分に脆弱を2受ける。",
+		"rarity": "epic",
+		"type": "skill",
+		"effects": [
+			{"type": "turn_attack_bonus", "value": 4},
+			{"type": "apply_status", "target": "self", "status": "vulnerable", "amount": 2}
+		]
 	},
 	"brace": {
 		"id": "brace", "name": "身構える", "cost": 1,
@@ -1307,11 +1340,15 @@ func upgrade_card(card_ref) -> Dictionary:
 				effect["value"] = effect.get("value", 0) + 2
 				upgraded_effect = true
 			"apply_status":
-				if ["vulnerable", "weak", "poison"].has(effect.get("status", "")):
+				# 自分への状態異常はデメリットなので強化対象にしない
+				if effect.get("target", "enemy") == "enemy" and ["vulnerable", "weak", "poison"].has(effect.get("status", "")):
 					effect["amount"] = effect.get("amount", 1) + 1
 					upgraded_effect = true
 			"poison_burst":
 				effect["value"] = effect.get("value", 4) + 1
+				upgraded_effect = true
+			"turn_thorns", "turn_attack_bonus":
+				effect["value"] = effect.get("value", 0) + 2
 				upgraded_effect = true
 	if not upgraded_effect and upgraded_card.get("cost", 0) > 0:
 		upgraded_card["cost"] = upgraded_card.get("cost", 0) - 1
@@ -1366,10 +1403,10 @@ func get_removable_deck_indices() -> Array[int]:
 func _card_has_upgrade_target(card: Dictionary) -> bool:
 	for effect in card.get("effects", []):
 		match effect.get("type", ""):
-			"damage", "damage_multi", "conditional_damage", "vulnerable_bonus_damage", "block", "draw", "heal", "poison_burst":
+			"damage", "damage_multi", "conditional_damage", "vulnerable_bonus_damage", "block", "draw", "heal", "poison_burst", "turn_thorns", "turn_attack_bonus":
 				return true
 			"apply_status":
-				if ["vulnerable", "weak", "poison"].has(effect.get("status", "")):
+				if effect.get("target", "enemy") == "enemy" and ["vulnerable", "weak", "poison"].has(effect.get("status", "")):
 					return true
 	return card.get("cost", 0) > 0
 
@@ -1412,6 +1449,14 @@ func _make_upgraded_description(card: Dictionary) -> String:
 				parts.append("最大HPが%d減る。" % effect.get("value", 0))
 			"self_temp_discard":
 				parts.append("「%s」を\n捨て札に混ぜる。" % TEMPORARY_STATUS_CARDS.get(effect.get("card_id", ""), {}).get("name", "お邪魔"))
+			"self_temp_draw":
+				parts.append("「%s」を\n山札に混ぜる。" % TEMPORARY_STATUS_CARDS.get(effect.get("card_id", ""), {}).get("name", "お邪魔"))
+			"turn_thorns":
+				parts.append("このターン、攻撃を\n受けるたび%d返す。" % effect.get("value", 0))
+			"carry_block_once":
+				parts.append("次のターンに\n全量持ち越す。")
+			"turn_attack_bonus":
+				parts.append("このターン、攻撃カードの\nダメージ+%d。" % effect.get("value", 0))
 	if not minimum_hp_text.is_empty():
 		parts.append(minimum_hp_text)
 	if parts.is_empty():
@@ -1866,12 +1911,7 @@ func get_card_reward_choice_bonus() -> int:
 	return bonus
 
 func modify_card_reward_weights(weights: Dictionary) -> Dictionary:
-	var result = weights.duplicate()
-	if has_relic("fate_severing_thread"):
-		result["rare"] = result.get("rare", 22) + 8
-		result["epic"] = result.get("epic", 3) + 5
-		result["common"] = maxi(1, result.get("common", 75) - 13)
-	return result
+	return weights.duplicate()
 
 func get_rest_heal_bonus() -> int:
 	return 8 if has_relic("old_wound_bandage") else 0
