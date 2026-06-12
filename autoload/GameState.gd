@@ -886,7 +886,7 @@ const ENEMIES: Dictionary = {
 		"id": "hero", "enemy_id": "hero", "name": "勇者", "name_jp": "勇者", "enemy_name": "勇者", "display_name": "勇者",
 		"image_path": "res://assets/enemies/hero.png", "sprite_path": "res://assets/enemies/hero.png",
 		"max_hp": 140, "hp": 140, "attack": 13, "block": 14, "enemy_type": "hero", "turn_count": 0, "next_action": {}, "phase": 1, "enraged": false, "is_boss": true,
-		"shape": "sprite_enemy", "sprite_scale": 0.72, "sprite_offset": Vector2(0, 126), "enemy_name_offset": Vector2(0, -240), "enemy_hp_offset": Vector2(0, -214), "enemy_status_offset": Vector2(0, -190), "hp_bar_width": 200.0, "intent_offset": Vector2(235, -88), "glow_color": Color(1.0, 0.82, 0.34), "aura_color": Color(1.0, 0.84, 0.40), "aura_strength": 0.15, "shadow_scale": Vector2(1.18, 1.0)
+		"shape": "sprite_enemy", "sprite_scale": 0.58, "sprite_offset": Vector2(0, 152), "enemy_name_offset": Vector2(0, -240), "enemy_hp_offset": Vector2(0, -214), "enemy_status_offset": Vector2(0, -190), "hp_bar_width": 200.0, "intent_offset": Vector2(235, -88), "glow_color": Color(1.0, 0.82, 0.34), "aura_color": Color(1.0, 0.84, 0.40), "aura_strength": 0.15, "shadow_scale": Vector2(1.18, 1.0)
 	},
 	"forest_hunter": {
 		"id": "forest_hunter", "enemy_id": "forest_hunter", "name": "森の追跡者", "name_jp": "森の追跡者", "enemy_name": "森の追跡者", "display_name": "森の追跡者",
