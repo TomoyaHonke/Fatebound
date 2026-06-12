@@ -848,7 +848,7 @@ func _start_battle() -> void:
 	if GameState.has_relic("hunter_trapwire") and _enemy_node:
 		_enemy_node.apply_status("weak", 1)
 	if GameState.has_relic("deceit_chalice") and _enemy_node:
-		_enemy_node.apply_status("poison", 3)
+		_enemy_node.apply_status("poison", 3 + GameState.get_poison_status_bonus())
 
 	_update_hud()
 
@@ -1174,10 +1174,28 @@ func _apply_effects(card_data: Dictionary) -> void:
 				if target == "enemy":
 					if status == "vulnerable":
 						amount += GameState.get_vulnerable_status_bonus()
+					elif status == "poison":
+						amount += GameState.get_poison_status_bonus()
 					_enemy_node.apply_status(status, amount)
 					_log("敵に%sを%d付与。" % [_status_name(status), amount])
 				else:
 					GameState.apply_status(status, amount)
+			"double_poison":
+				if _enemy_node:
+					var stacks = int(_enemy_node.statuses.get("poison", 0))
+					if stacks > 0:
+						_enemy_node.apply_status("poison", stacks)
+						_log("敵の毒が%dになった。" % (stacks * 2))
+					else:
+						_log("敵は毒を受けていない。")
+			"poison_burst":
+				if _enemy_node:
+					var stacks = int(_enemy_node.statuses.get("poison", 0))
+					if stacks > 0:
+						_enemy_node.statuses.erase("poison")
+						await _deal_damage_to_enemy_with_effect(stacks * effect.get("value", 4))
+					else:
+						_log("敵は毒を受けていない。")
 
 	_update_hud()
 	_refresh_hand(true)
@@ -1234,6 +1252,11 @@ func _build_combat_description_segments(card_data: Dictionary) -> Array:
 			"apply_status":
 				var target = "敵に" if effect.get("target", "enemy") == "enemy" else "自分に"
 				lines.append([_plain_segment("%s%sを%d付与。" % [target, _status_name(effect.get("status", "")), effect.get("amount", 1)])])
+			"double_poison":
+				lines.append([_plain_segment("敵の毒を2倍にする。")])
+			"poison_burst":
+				lines.append([_plain_segment("敵の毒1につき%dダメージ。" % effect.get("value", 4))])
+				lines.append([_plain_segment("毒をすべて消費する。")])
 	return lines
 
 func _preview_damage(card_data: Dictionary, base: int) -> int:
@@ -1833,6 +1856,8 @@ func _status_name(status: String) -> String:
 			return "脱力"
 		"vulnerable":
 			return "脆弱"
+		"poison":
+			return "毒"
 		_:
 			return status
 

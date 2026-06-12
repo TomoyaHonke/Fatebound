@@ -38,7 +38,8 @@ fate_severing_thread (lorc/swirl-string), former_hunter_bow (lorc/pocket-bow),
 hunter_tracking_eye (lorc/beast-eye), hunter_trapwire (lorc/wolf-trap),
 false_holy_seal (lorc/spiked-halo), deceit_chalice (lorc/chalice-drops),
 martyr_rosary (lorc/gem-necklace), unyielding_white_shield (lorc/crenulated-shield),
-shield_thorns (delapouite/spiked-shield), knight_oath (lorc/shield-reflect).
+shield_thorns (delapouite/spiked-shield), knight_oath (lorc/shield-reflect),
+serpent_fang (lorc/bestial-fangs).
 
 Icons were recolored and composited into the game's card frames; the underlying
 artwork is unmodified. Source icon for each card:
@@ -49,7 +50,10 @@ artwork is unmodified. Source icon for each card:
 | worn_guard 朽ちた防御 | lorc/cracked-shield |
 | betrayal_blow 裏切りの一撃 | lorc/backstab |
 | rusted_combo 錆びた連撃 | lorc/crossed-slashes |
-| lacerate 裂傷 | lorc/serrated-slash |
+| corroding_blade 蝕む刃 | lorc/gooey-sword |
+| corrosive_mist 腐食の霧 | lorc/poison-gas |
+| slow_death 緩慢な死 | lorc/hourglass |
+| poison_burst 蝕み爆ぜる | lorc/acid-blob |
 | deep_wound 深手 | lorc/sword-wound |
 | parry 受け流し | lorc/sword-clash |
 | brace 身構える | lorc/checked-shield |
@@ -69,7 +73,6 @@ artwork is unmodified. Source icon for each card:
 | life_reap 命の収奪 | lorc/scythe |
 | endless_revenge 終わらぬ復讐 | lorc/spinning-sword |
 | abyss_contract 奈落との契約 | lorc/pentagram-rose |
-| black_flame 黒炎 | lorc/fire-silhouette |
 | junk ガラクタ | lorc/broken-bottle |
 | brand_of_sin 罪の烙印 | lorc/wax-seal |
 | arrow_wound 矢傷 | lorc/arrowed |

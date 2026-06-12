@@ -414,6 +414,13 @@ const RELICS: Dictionary = {
 		"description_jp": "各戦闘開始時、敵に脆弱を2付与する。\n足跡、息遣い、血の匂い。見失わないための眼だけが残った。",
 		"rarity": "boss", "icon_text": "眼"
 	},
+	"serpent_fang": {
+		"id": "serpent_fang", "name_jp": "蛇の牙",
+		"effect_jp": "敵に毒を付与するたび、追加で毒を1付与する。",
+		"memory_jp": "乾いた牙に、まだ毒が残っている。",
+		"description_jp": "敵に毒を付与するたび、追加で毒を1付与する。\n乾いた牙に、まだ毒が残っている。",
+		"rarity": "rare", "icon_text": "牙"
+	},
 	"unyielding_white_shield": {
 		"id": "unyielding_white_shield", "name_jp": "不抜の白盾",
 		"effect_jp": "ターン開始時にブロックが消えず、10まで持ち越せる。",
@@ -472,10 +479,10 @@ const CARD_RARITY_WEIGHTS: Dictionary = {
 	"epic": 3,
 }
 const CARD_REWARD_POOL: Array = [
-	"rusted_combo", "lacerate", "deep_wound", "parry", "brace", "mark_of_hatred", "abyss_breath",
+	"rusted_combo", "corroding_blade", "corrosive_mist", "deep_wound", "parry", "brace", "mark_of_hatred", "abyss_breath",
 	"revenge_blade", "condemnation", "blood_pursuit", "pain_to_power", "fallen_grace", "pact_price",
-	"unforgiven", "headsman", "abyss_reversal", "oathbreaker", "fallen_wings", "life_reap",
-	"endless_revenge", "abyss_contract",
+	"unforgiven", "headsman", "slow_death", "abyss_reversal", "oathbreaker", "fallen_wings", "life_reap",
+	"endless_revenge", "abyss_contract", "poison_burst",
 ]
 
 const CARDS: Dictionary = {
@@ -510,12 +517,39 @@ const CARDS: Dictionary = {
 		"type": "attack",
 		"effects": [{"type": "damage_multi", "value": 4, "times": 2}]
 	},
-	"lacerate": {
-		"id": "lacerate", "name": "裂傷", "cost": 1,
-		"description": "敵に8ダメージ。",
+	"corroding_blade": {
+		"id": "corroding_blade", "name": "蝕む刃", "cost": 1,
+		"description": "敵に4ダメージ。\n毒を2付与。",
 		"rarity": "common",
 		"type": "attack",
-		"effects": [{"type": "damage", "value": 8}]
+		"effects": [
+			{"type": "damage", "value": 4},
+			{"type": "apply_status", "target": "enemy", "status": "poison", "amount": 2}
+		]
+	},
+	"corrosive_mist": {
+		"id": "corrosive_mist", "name": "腐食の霧", "cost": 1,
+		"description": "敵に毒を3付与。\nカードを1枚引く。",
+		"rarity": "common",
+		"type": "skill",
+		"effects": [
+			{"type": "apply_status", "target": "enemy", "status": "poison", "amount": 3},
+			{"type": "draw", "value": 1}
+		]
+	},
+	"slow_death": {
+		"id": "slow_death", "name": "緩慢な死", "cost": 1,
+		"description": "敵の毒を2倍にする。",
+		"rarity": "rare",
+		"type": "skill",
+		"effects": [{"type": "double_poison"}]
+	},
+	"poison_burst": {
+		"id": "poison_burst", "name": "蝕み爆ぜる", "cost": 2,
+		"description": "敵の毒1につき\n4ダメージを与え、\n毒をすべて消費する。",
+		"rarity": "epic",
+		"type": "attack",
+		"effects": [{"type": "poison_burst", "value": 4}]
 	},
 	"deep_wound": {
 		"id": "deep_wound", "name": "深手", "cost": 2,
@@ -682,16 +716,6 @@ const CARDS: Dictionary = {
 			{"type": "lose_hp", "value": 5, "minimum_hp": 1},
 			{"type": "draw", "value": 3},
 			{"type": "gain_energy", "value": 1}
-		]
-	},
-	"black_flame": {
-		"id": "black_flame", "name": "黒炎", "cost": 1,
-		"description": "敵に7ダメージ。\n脆弱を1付与。",
-		"rarity": "rare",
-		"type": "attack",
-		"effects": [
-			{"type": "damage", "value": 7},
-			{"type": "apply_status", "target": "enemy", "status": "vulnerable", "amount": 1}
 		]
 	},
 }
@@ -1246,9 +1270,12 @@ func upgrade_card(card_ref) -> Dictionary:
 				effect["value"] = effect.get("value", 0) + 2
 				upgraded_effect = true
 			"apply_status":
-				if effect.get("status", "") == "vulnerable" or effect.get("status", "") == "weak":
+				if ["vulnerable", "weak", "poison"].has(effect.get("status", "")):
 					effect["amount"] = effect.get("amount", 1) + 1
 					upgraded_effect = true
+			"poison_burst":
+				effect["value"] = effect.get("value", 4) + 1
+				upgraded_effect = true
 	if not upgraded_effect and upgraded_card.get("cost", 0) > 0:
 		upgraded_card["cost"] = upgraded_card.get("cost", 0) - 1
 	upgraded_card["effects"] = effects
@@ -1302,10 +1329,10 @@ func get_removable_deck_indices() -> Array[int]:
 func _card_has_upgrade_target(card: Dictionary) -> bool:
 	for effect in card.get("effects", []):
 		match effect.get("type", ""):
-			"damage", "damage_multi", "conditional_damage", "vulnerable_bonus_damage", "block", "draw", "heal":
+			"damage", "damage_multi", "conditional_damage", "vulnerable_bonus_damage", "block", "draw", "heal", "poison_burst":
 				return true
 			"apply_status":
-				if effect.get("status", "") == "vulnerable" or effect.get("status", "") == "weak":
+				if ["vulnerable", "weak", "poison"].has(effect.get("status", "")):
 					return true
 	return card.get("cost", 0) > 0
 
@@ -1337,6 +1364,10 @@ func _make_upgraded_description(card: Dictionary) -> String:
 			"apply_status":
 				var target = "敵に" if effect.get("target", "enemy") == "enemy" else "自分に"
 				parts.append("%s%sを%d付与。" % [target, _status_description_name(effect.get("status", "")), effect.get("amount", 1)])
+			"double_poison":
+				parts.append("敵の毒を2倍にする。")
+			"poison_burst":
+				parts.append("敵の毒1につき\n%dダメージを与え、\n毒をすべて消費する。" % effect.get("value", 4))
 	if not minimum_hp_text.is_empty():
 		parts.append(minimum_hp_text)
 	if parts.is_empty():
@@ -1349,6 +1380,8 @@ func _status_description_name(status: String) -> String:
 			return "脆弱"
 		"weak":
 			return "脱力"
+		"poison":
+			return "毒"
 		_:
 			return status
 
@@ -1789,3 +1822,6 @@ func get_hp_loss_block_bonus() -> int:
 
 func get_vulnerable_status_bonus() -> int:
 	return 1 if has_relic("chain_of_judgement") else 0
+
+func get_poison_status_bonus() -> int:
+	return 1 if has_relic("serpent_fang") else 0
