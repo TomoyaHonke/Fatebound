@@ -35,7 +35,9 @@ bloodied_blade_shard (lorc/shard-sword), pact_brand (lorc/wax-seal),
 executioner_mask (delapouite/executioner-hood), rotted_crown (lorc/crown-of-thorns),
 abyss_core (lorc/floating-crystal), chain_of_judgement (lorc/crossed-chains),
 fate_severing_thread (lorc/swirl-string), former_hunter_bow (lorc/pocket-bow),
-hunter_tracking_eye (lorc/beast-eye), hunter_trapwire (lorc/wolf-trap).
+hunter_tracking_eye (lorc/beast-eye), hunter_trapwire (lorc/wolf-trap),
+false_holy_seal (lorc/spiked-halo), deceit_chalice (lorc/chalice-drops),
+martyr_rosary (lorc/gem-necklace).
 
 Icons were recolored and composited into the game's card frames; the underlying
 artwork is unmodified. Source icon for each card:

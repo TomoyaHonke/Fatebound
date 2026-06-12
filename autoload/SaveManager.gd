@@ -47,6 +47,7 @@ func load_run() -> bool:
 	GameState.current_act = int(data["current_act"])
 	GameState.apply_act_map()
 	GameState.owned_relic_ids = (data["owned_relic_ids"] as Array).duplicate()
+	GameState.player_max_energy = 3 + (1 if GameState.has_relic("false_holy_seal") else 0)
 	GameState.initial_relic_chosen = bool(data["initial_relic_chosen"])
 	GameState.relic_choice_done = bool(data["relic_choice_done"])
 	GameState.map_current_node_id = String(data["map_current_node_id"])

@@ -11,6 +11,7 @@ const RELIC_VIEWER_SCENE       = "res://scenes/ui/RelicViewer.tscn"
 const RELIC_REWARD_SCENE       = "res://scenes/ui/RelicRewardScreen.tscn"
 const BOSS_RELIC_REWARD_SCENE  = "res://scenes/ui/BossRelicRewardScreen.tscn"
 const ACT2_BOSS_RELIC_REWARD_BACKGROUND = "res://assets/backgrounds/act2/act2_boss_relic_reward_fallen_saint.png"
+const ACT2_BOSS_RELIC_IDS = ["false_holy_seal", "deceit_chalice", "martyr_rosary"]
 
 # ── Split-out modules ─────────────────────────────────────────────────────────
 const EnemyAI       = preload("res://scenes/combat/EnemyAI.gd")
@@ -842,6 +843,8 @@ func _start_battle() -> void:
 		_enemy_node.apply_status("vulnerable", vuln_amount)
 	if GameState.has_relic("hunter_trapwire") and _enemy_node:
 		_enemy_node.apply_status("weak", 1)
+	if GameState.has_relic("deceit_chalice") and _enemy_node:
+		_enemy_node.apply_status("poison", 3)
 
 	_update_hud()
 
@@ -1001,6 +1004,10 @@ func _on_card_played(card_index: int) -> void:
 	if card_node:
 		await _animate_card_flight(card_node, card_data)
 	await _apply_effects(card_data)
+	# 殉教者のロザリオ: 防御カードを使うたびHP1回復
+	if card_data.get("type", "") == "defense" and GameState.has_relic("martyr_rosary"):
+		GameState.heal(1)
+		_update_hud()
 	if card_data.get("type", "") == "attack" and not GameState.first_attack_used_this_combat:
 		GameState.first_attack_used_this_combat = true
 	if _player_turn and _enemy_node and _enemy_node.current_hp > 0 and GameState.player_hp > 0:
@@ -1340,8 +1347,14 @@ func _do_enemy_turn() -> void:
 
 	_enemy_turn_idx += 1
 
-	# Tick enemy statuses
+	# Tick enemy statuses(毒ダメージもここで発生する)
+	var pre_tick_hp = _enemy_node.current_hp
 	_enemy_node.tick_statuses()
+	var poison_loss = pre_tick_hp - _enemy_node.current_hp
+	if poison_loss > 0:
+		_show_damage_number(poison_loss, _enemy_node.position + Vector2(-30, -160), Color(0.45, 0.90, 0.45))
+	if _enemy_node.current_hp <= 0:
+		return  # 毒で倒れた(died シグナル側の処理に任せる)
 
 	# 行動名の宣言(頭上に短く表示)
 	_show_enemy_callout(action.get("desc", ""))
@@ -1682,11 +1695,7 @@ func _show_boss_relic_reward() -> void:
 		_advance_after_boss_relic()
 		return
 	if GameState.current_act == 2:
-		var relic_ids = GameState.roll_relic_choices(3, "boss_relic")
-		if relic_ids.is_empty():
-			_advance_after_boss_relic()
-			return
-		_boss_relic_reward.show_reward(relic_ids, ACT2_BOSS_RELIC_REWARD_BACKGROUND)
+		_boss_relic_reward.show_reward(ACT2_BOSS_RELIC_IDS, ACT2_BOSS_RELIC_REWARD_BACKGROUND)
 	else:
 		_boss_relic_reward.show_reward()
 

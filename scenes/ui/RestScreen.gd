@@ -152,7 +152,7 @@ func _on_rest() -> void:
 	if _rested:
 		return
 	_rested = true
-	var heal_amount = int(GameState.player_max_hp * 0.30) + GameState.get_rest_heal_bonus()
+	var heal_amount = GameState.get_rest_heal_amount()
 	GameState.heal(heal_amount)
 	_result_label.text = "体を休めた。HPが %d 回復した。\n(現在 %d / %d)" % [heal_amount, GameState.player_hp, GameState.player_max_hp]
 	_result_label.visible = true

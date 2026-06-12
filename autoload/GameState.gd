@@ -414,6 +414,27 @@ const RELICS: Dictionary = {
 		"description_jp": "各戦闘開始時、敵に脆弱を2付与する。\n足跡、息遣い、血の匂い。見失わないための眼だけが残った。",
 		"rarity": "boss", "icon_text": "眼"
 	},
+	"false_holy_seal": {
+		"id": "false_holy_seal", "name_jp": "偽りの聖印",
+		"effect_jp": "エナジー上限が1増える。ただし休憩での回復量が半分になる。",
+		"memory_jp": "聖女の祝福は本物だった。──祝福だけは。",
+		"description_jp": "エナジー上限が1増える。ただし休憩での回復量が半分になる。\n聖女の祝福は本物だった。──祝福だけは。",
+		"rarity": "boss", "icon_text": "聖"
+	},
+	"deceit_chalice": {
+		"id": "deceit_chalice", "name_jp": "欺瞞の聖杯",
+		"effect_jp": "戦闘開始時、敵に毒を3付与する。",
+		"memory_jp": "彼女が回した杯を、疑った者はいなかった。",
+		"description_jp": "戦闘開始時、敵に毒を3付与する。\n彼女が回した杯を、疑った者はいなかった。",
+		"rarity": "boss", "icon_text": "杯"
+	},
+	"martyr_rosary": {
+		"id": "martyr_rosary", "name_jp": "殉教者のロザリオ",
+		"effect_jp": "防御カードを使うたび、HPを1回復する。",
+		"memory_jp": "祈りの数だけ珠が減っている。誰のための祈りだったのか。",
+		"description_jp": "防御カードを使うたび、HPを1回復する。\n祈りの数だけ珠が減っている。誰のための祈りだったのか。",
+		"rarity": "boss", "icon_text": "珠"
+	},
 	"hunter_trapwire": {
 		"id": "hunter_trapwire", "name_jp": "狩人の罠糸",
 		"effect_jp": "各戦闘開始時、敵に脱力を1付与する。",
@@ -1048,6 +1069,7 @@ func _ready() -> void:
 func reset_run() -> void:
 	player_hp = player_max_hp
 	player_block = 0
+	player_max_energy = 3
 	player_energy = player_max_energy
 	player_statuses = {}
 	current_battle = 0
@@ -1620,6 +1642,16 @@ func has_relic(id: String) -> bool:
 func add_relic(id: String) -> void:
 	if RELICS.has(id) and not owned_relic_ids.has(id):
 		owned_relic_ids.append(id)
+		if id == "false_holy_seal":
+			player_max_energy += 1
+			player_energy = player_max_energy
+
+## 休憩での回復量(偽りの聖印で半減)
+func get_rest_heal_amount() -> int:
+	var amount = int(player_max_hp * 0.30) + get_rest_heal_bonus()
+	if has_relic("false_holy_seal"):
+		amount = int(amount / 2.0)
+	return amount
 
 func get_owned_relics() -> Array:
 	var result: Array = []

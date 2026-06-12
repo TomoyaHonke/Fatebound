@@ -382,6 +382,17 @@ func apply_status(status: String, amount: int) -> void:
 	_update_status_label()
 
 func tick_statuses() -> void:
+	# 毒: スタック数ぶんHPを失う(ブロック無視)。その後スタックが1減る
+	var poison_stacks := int(statuses.get("poison", 0))
+	if poison_stacks > 0 and not _is_dead:
+		current_hp = maxi(0, current_hp - poison_stacks)
+		if _hp_bar:
+			_hp_bar.value = current_hp
+		_update_hp_label()
+		_flash()
+		if current_hp <= 0:
+			_is_dead = true
+			_play_death()
 	var to_remove: Array = []
 	for key in statuses:
 		statuses[key] -= 1
